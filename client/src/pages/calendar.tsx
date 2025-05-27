@@ -1,11 +1,14 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { format, addMonths, subMonths } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus, User, Waves, Filter } from "lucide-react";
 import { CalendarGrid } from "@/components/calendar-grid";
 import { TrainingSidebar } from "@/components/training-sidebar";
 import { TrainingModal } from "@/components/training-modal";
+import { apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { TrainingSession } from "@shared/schema";
 
 export default function Calendar() {
@@ -13,6 +16,7 @@ export default function Calendar() {
   const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
@@ -31,6 +35,41 @@ export default function Calendar() {
   const { data: monthStats } = useQuery({
     queryKey: ['/api/statistics/month', year, month],
   });
+
+  // 削除機能
+  const deleteMutation = useMutation({
+    mutationFn: async (sessionId: number) => {
+      const response = await apiRequest("DELETE", `/api/training-sessions/${sessionId}`);
+      return response;
+    },
+    onSuccess: () => {
+      toast({
+        title: "成功",
+        description: "トレーニングを削除しました",
+      });
+      // キャッシュを更新
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });
+    },
+    onError: () => {
+      toast({
+        title: "エラー",
+        description: "削除に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // 削除イベントリスナー
+  useEffect(() => {
+    const handleDeleteTraining = (event: CustomEvent) => {
+      deleteMutation.mutate(event.detail);
+    };
+
+    window.addEventListener('deleteTraining', handleDeleteTraining as EventListener);
+    return () => {
+      window.removeEventListener('deleteTraining', handleDeleteTraining as EventListener);
+    };
+  }, [deleteMutation]);
 
   const handlePreviousMonth = () => {
     setCurrentDate(prev => subMonths(prev, 1));

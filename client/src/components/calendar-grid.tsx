@@ -83,9 +83,18 @@ export function CalendarGrid({
                   return (
                     <div
                       key={session.id}
-                      className={`${colorClass} text-white text-xs px-2 py-1 rounded truncate`}
+                      className={`${colorClass} text-white text-xs px-2 py-1 rounded truncate cursor-pointer hover:opacity-80 group flex items-center justify-between`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // 削除確認を表示
+                        if (window.confirm(`「${displayText}」を削除しますか？`)) {
+                          // 削除処理をここに追加
+                          window.dispatchEvent(new CustomEvent('deleteTraining', { detail: session.id }));
+                        }
+                      }}
                     >
-                      {displayText}
+                      <span className="truncate">{displayText}</span>
+                      <span className="opacity-0 group-hover:opacity-100 ml-1">×</span>
                     </div>
                   );
                 })}
