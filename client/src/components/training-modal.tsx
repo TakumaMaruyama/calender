@@ -30,6 +30,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
+import { getTrainingTypeColor, getTrainingTypeLabel } from "@/lib/utils";
 
 const formSchema = z.object({
   title: z.string().min(1, "トレーニング名を選択してください"),
@@ -57,6 +58,12 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
   const { toast } = useToast();
   const [selectedTrainingName, setSelectedTrainingName] = useState("");
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
+  const [trainingEntries, setTrainingEntries] = useState<Array<{
+    id: string;
+    title: string;
+    type: string;
+    competitionName?: string;
+  }>>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -75,25 +82,62 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
     },
   });
 
+  const addTrainingEntry = () => {
+    const title = form.getValues("title");
+    const type = form.getValues("type");
+    const competitionName = form.getValues("competitionName");
+    
+    if (title && type) {
+      const newEntry = {
+        id: Date.now().toString(),
+        title,
+        type,
+        competitionName: title === "大会" ? competitionName : undefined
+      };
+      setTrainingEntries(prev => [...prev, newEntry]);
+      
+      // Reset training name and type fields
+      form.setValue("title", "");
+      form.setValue("type", "");
+      form.setValue("competitionName", "");
+      setSelectedTrainingName("");
+    }
+  };
+
+  const removeTrainingEntry = (id: string) => {
+    setTrainingEntries(prev => prev.filter(entry => entry.id !== id));
+  };
+
   const createSessionMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      // 大会の場合は大会名をタイトルに含める
-      const finalTitle = data.title === "大会" && data.competitionName 
-        ? `大会: ${data.competitionName}`
-        : data.title;
+      // 複数のトレーニングエントリを個別に保存
+      const promises = trainingEntries.map(async (entry) => {
+        const finalTitle = entry.title === "大会" && entry.competitionName 
+          ? `大会: ${entry.competitionName}`
+          : entry.title;
 
-      const response = await apiRequest("POST", "/api/training-sessions", {
-        ...data,
-        title: finalTitle,
-        weekdays: selectedWeekdays,
-        strokes: null,
-        distance: null,
-        intensity: null,
-        lanes: null,
-        menuDetails: null,
-        coachNotes: null,
+        const response = await apiRequest("POST", "/api/training-sessions", {
+          title: finalTitle,
+          type: entry.type,
+          date: data.date,
+          startTime: data.startTime,
+          endTime: data.endTime,
+          isRecurring: data.isRecurring,
+          recurringPattern: data.recurringPattern,
+          recurringEndDate: data.recurringEndDate,
+          weekdays: selectedWeekdays,
+          maxOccurrences: data.maxOccurrences,
+          strokes: null,
+          distance: null,
+          intensity: null,
+          lanes: null,
+          menuDetails: null,
+          coachNotes: null,
+        });
+        return response.json();
       });
-      return response.json();
+      
+      return Promise.all(promises);
     },
     onSuccess: () => {
       toast({
@@ -106,6 +150,9 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
       
       onClose();
       form.reset();
+      setTrainingEntries([]);
+      setSelectedTrainingName("");
+      setSelectedWeekdays([]);
     },
     onError: (error) => {
       toast({
@@ -124,6 +171,14 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
   }, [selectedDate, form]);
 
   const onSubmit = (data: FormData) => {
+    if (trainingEntries.length === 0) {
+      toast({
+        title: "エラー",
+        description: "少なくとも1つのトレーニングを追加してください",
+        variant: "destructive",
+      });
+      return;
+    }
     createSessionMutation.mutate(data);
   };
 
@@ -138,88 +193,154 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* 日付選択 */}
             <FormField
               control={form.control}
-              name="title"
+              name="date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-sm font-medium text-ocean-700">
-                    トレーニング名
-                  </FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setSelectedTrainingName(value);
-                    }} 
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="border-ocean-200 focus:ring-ocean-500">
-                        <SelectValue placeholder="選択してください" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="ミニレク">ミニレク</SelectItem>
-                      <SelectItem value="外">外</SelectItem>
-                      <SelectItem value="ミニ授業">ミニ授業</SelectItem>
-                      <SelectItem value="大会">大会</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <FormLabel className="text-sm font-medium text-ocean-700">日付</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="date"
+                      className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {selectedTrainingName === "大会" && (
+            {/* トレーニング追加セクション */}
+            <div className="space-y-4 p-4 bg-ocean-50 rounded-lg border border-ocean-200">
+              <h3 className="text-sm font-medium text-ocean-700">トレーニング追加</h3>
+              
               <FormField
                 control={form.control}
-                name="competitionName"
+                name="title"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-ocean-700">
-                      大会名
+                      トレーニング名
                     </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="例: 春季水泳大会"
-                        className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
-                        {...field}
-                      />
-                    </FormControl>
+                    <Select 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedTrainingName(value);
+                      }} 
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="border-ocean-200 focus:ring-ocean-500">
+                          <SelectValue placeholder="選択してください" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ミニレク">ミニレク</SelectItem>
+                        <SelectItem value="外">外</SelectItem>
+                        <SelectItem value="ミニ授業">ミニ授業</SelectItem>
+                        <SelectItem value="大会">大会</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            )}
 
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-ocean-700">
-                    トレーニング種類
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger className="border-ocean-200 focus:ring-ocean-500">
-                        <SelectValue placeholder="選択してください" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="sprint">スプリント</SelectItem>
-                      <SelectItem value="form">フォーム</SelectItem>
-                      <SelectItem value="endurance_low">持久力（低）</SelectItem>
-                      <SelectItem value="endurance_medium">持久力（中）</SelectItem>
-                      <SelectItem value="endurance_high">持久力（高）</SelectItem>
-                      <SelectItem value="competition_practice">大会練習</SelectItem>
-                      <SelectItem value="no_practice">※練習は無し</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
+              {selectedTrainingName === "大会" && (
+                <FormField
+                  control={form.control}
+                  name="competitionName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-ocean-700">
+                        大会名
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="例: 春季水泳大会"
+                          className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               )}
-            />
+
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-ocean-700">
+                      トレーニング種類
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger className="border-ocean-200 focus:ring-ocean-500">
+                          <SelectValue placeholder="選択してください" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="sprint">スプリント</SelectItem>
+                        <SelectItem value="form">フォーム</SelectItem>
+                        <SelectItem value="endurance_low">持久力（低）</SelectItem>
+                        <SelectItem value="endurance_medium">持久力（中）</SelectItem>
+                        <SelectItem value="endurance_high">持久力（高）</SelectItem>
+                        <SelectItem value="competition_practice">大会練習</SelectItem>
+                        <SelectItem value="no_practice">※練習は無し</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="button"
+                onClick={addTrainingEntry}
+                className="w-full bg-green-500 text-white hover:bg-green-600"
+                disabled={!form.watch("title") || !form.watch("type")}
+              >
+                トレーニングを追加
+              </Button>
+            </div>
+
+            {/* 追加されたトレーニング一覧 */}
+            {trainingEntries.length > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-medium text-ocean-700">追加されたトレーニング</h3>
+                {trainingEntries.map((entry) => (
+                  <div key={entry.id} className="flex items-center justify-between p-3 bg-white rounded-lg border border-ocean-200">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-3 h-3 rounded ${getTrainingTypeColor(entry.type)}`}></div>
+                      <div>
+                        <span className="text-sm font-medium text-ocean-900">
+                          {entry.title === "大会" && entry.competitionName 
+                            ? `大会: ${entry.competitionName}` 
+                            : entry.title}
+                        </span>
+                        <span className="text-xs text-ocean-600 ml-2">
+                          ({getTrainingTypeLabel(entry.type)})
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeTrainingEntry(entry.id)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      削除
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <FormField
