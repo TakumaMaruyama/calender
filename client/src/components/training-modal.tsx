@@ -1,9 +1,8 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,19 +25,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
-import { insertTrainingSessionSchema } from "@shared/schema";
 
-const formSchema = insertTrainingSessionSchema.extend({
-  date: z.string().min(1, "日付を選択してください"),
-  startTime: z.string().min(1, "開始時間を入力してください"),
+const formSchema = z.object({
   title: z.string().min(1, "タイトルを入力してください"),
   type: z.string().min(1, "トレーニング種類を選択してください"),
+  date: z.string().min(1, "日付を選択してください"),
+  startTime: z.string().min(1, "開始時間を入力してください"),
+  endTime: z.string().optional(),
+  isRecurring: z.boolean().default(false),
+  recurringPattern: z.string().nullable().optional(),
+  recurringEndDate: z.string().nullable().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -51,7 +52,6 @@ interface TrainingModalProps {
 
 export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalProps) {
   const { toast } = useToast();
-  const [selectedStrokes, setSelectedStrokes] = useState<string[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -61,12 +61,6 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
       date: selectedDate || "",
       startTime: "",
       endTime: "",
-      strokes: [],
-      distance: undefined,
-      intensity: "",
-      lanes: "",
-      menuDetails: "",
-      coachNotes: "",
       isRecurring: false,
       recurringPattern: null,
       recurringEndDate: null,
@@ -77,8 +71,12 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
     mutationFn: async (data: FormData) => {
       const response = await apiRequest("POST", "/api/training-sessions", {
         ...data,
-        strokes: selectedStrokes,
-        distance: data.distance ? Number(data.distance) : null,
+        strokes: null,
+        distance: null,
+        intensity: null,
+        lanes: null,
+        menuDetails: null,
+        coachNotes: null,
       });
       return response.json();
     },
@@ -93,7 +91,6 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
       
       onClose();
       form.reset();
-      setSelectedStrokes([]);
     },
     onError: (error) => {
       toast({
@@ -113,14 +110,6 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
 
   const onSubmit = (data: FormData) => {
     createSessionMutation.mutate(data);
-  };
-
-  const handleStrokeChange = (stroke: string, checked: boolean) => {
-    if (checked) {
-      setSelectedStrokes(prev => [...prev, stroke]);
-    } else {
-      setSelectedStrokes(prev => prev.filter(s => s !== stroke));
-    }
   };
 
   return (
@@ -228,134 +217,6 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                     <Input
                       type="time"
                       className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <div>
-              <FormLabel className="text-sm font-medium text-ocean-700 mb-2 block">泳法</FormLabel>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: 'freestyle', label: '自由形' },
-                  { value: 'backstroke', label: '背泳ぎ' },
-                  { value: 'breaststroke', label: '平泳ぎ' },
-                  { value: 'butterfly', label: 'バタフライ' }
-                ].map((stroke) => (
-                  <div key={stroke.value} className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={selectedStrokes.includes(stroke.value)}
-                      onCheckedChange={(checked) => 
-                        handleStrokeChange(stroke.value, checked as boolean)
-                      }
-                      className="border-ocean-300 text-ocean-500 focus:ring-ocean-500"
-                    />
-                    <span className="text-sm">{stroke.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="distance"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-ocean-700">
-                      距離 (m)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="2000"
-                        className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="intensity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-ocean-700">強度</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="border-ocean-200 focus:ring-ocean-500">
-                          <SelectValue placeholder="選択してください" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="moderate">Moderate</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
-                        <SelectItem value="race_pace">Race Pace</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="lanes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-ocean-700">レーン</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="1-4"
-                      className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="menuDetails"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-ocean-700">
-                    メニュー詳細
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="ウォームアップ: 400m 自由形 Easy&#10;メイン: 8×100m 自由形 Hard (Rest: 15秒)&#10;クールダウン: 200m 背泳ぎ Easy"
-                      className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500 h-20"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="coachNotes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-ocean-700">
-                    コーチメモ
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="キックボードを使用してキック力強化に重点を置く"
-                      className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500 h-16"
                       {...field}
                     />
                   </FormControl>
