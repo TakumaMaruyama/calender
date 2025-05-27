@@ -39,8 +39,10 @@ const formSchema = z.object({
   endTime: z.string().optional(),
   competitionName: z.string().optional(),
   isRecurring: z.boolean().default(false),
-  recurringPattern: z.string().nullable().optional(),
-  recurringEndDate: z.string().nullable().optional(),
+  recurringPattern: z.string().optional(),
+  recurringEndDate: z.string().optional(),
+  weekdays: z.array(z.string()).optional(),
+  maxOccurrences: z.number().optional(),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -54,6 +56,7 @@ interface TrainingModalProps {
 export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalProps) {
   const { toast } = useToast();
   const [selectedTrainingName, setSelectedTrainingName] = useState("");
+  const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -65,8 +68,10 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
       endTime: "",
       competitionName: "",
       isRecurring: false,
-      recurringPattern: null,
-      recurringEndDate: null,
+      recurringPattern: "",
+      recurringEndDate: "",
+      weekdays: [],
+      maxOccurrences: undefined,
     },
   });
 
@@ -80,6 +85,7 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
       const response = await apiRequest("POST", "/api/training-sessions", {
         ...data,
         title: finalTitle,
+        weekdays: selectedWeekdays,
         strokes: null,
         distance: null,
         intensity: null,
@@ -291,6 +297,115 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                 </FormItem>
               )}
             />
+
+            {form.watch("isRecurring") && (
+              <div className="space-y-4 p-4 bg-ocean-50 rounded-lg border border-ocean-200">
+                <FormField
+                  control={form.control}
+                  name="recurringPattern"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-ocean-700">
+                        繰り返しパターン
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="border-ocean-200 focus:ring-ocean-500">
+                            <SelectValue placeholder="選択してください" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="daily">毎日</SelectItem>
+                          <SelectItem value="weekly">毎週</SelectItem>
+                          <SelectItem value="biweekly">隔週</SelectItem>
+                          <SelectItem value="monthly">毎月</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("recurringPattern") === "weekly" && (
+                  <div>
+                    <FormLabel className="text-sm font-medium text-ocean-700 mb-2 block">
+                      曜日選択
+                    </FormLabel>
+                    <div className="grid grid-cols-7 gap-2">
+                      {[
+                        { value: '0', label: '日' },
+                        { value: '1', label: '月' },
+                        { value: '2', label: '火' },
+                        { value: '3', label: '水' },
+                        { value: '4', label: '木' },
+                        { value: '5', label: '金' },
+                        { value: '6', label: '土' }
+                      ].map((day) => (
+                        <div key={day.value} className="flex flex-col items-center">
+                          <Checkbox
+                            checked={selectedWeekdays.includes(day.value)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedWeekdays(prev => [...prev, day.value]);
+                              } else {
+                                setSelectedWeekdays(prev => prev.filter(d => d !== day.value));
+                              }
+                              form.setValue("weekdays", selectedWeekdays);
+                            }}
+                            className="border-ocean-300 text-ocean-500 focus:ring-ocean-500"
+                          />
+                          <span className="text-xs mt-1">{day.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="recurringEndDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-ocean-700">
+                          終了日
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="date"
+                            className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="maxOccurrences"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-ocean-700">
+                          最大回数
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="10"
+                            className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
+                            {...field}
+                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="flex space-x-3 pt-4">
               <Button
