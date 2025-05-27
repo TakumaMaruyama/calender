@@ -41,6 +41,9 @@ export const insertSwimmerSchema = createInsertSchema(swimmers).omit({
 
 export const insertTrainingSessionSchema = createInsertSchema(trainingSessions).omit({
   id: true,
+}).extend({
+  title: z.string().optional(),
+  type: z.string().optional(),
 }).refine((data) => data.title || data.type, {
   message: "トレーニング名またはトレーニング種類のどちらかを選択してください",
 });
