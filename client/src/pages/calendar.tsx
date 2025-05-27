@@ -124,81 +124,62 @@ export default function Calendar() {
     <div className="min-h-screen bg-ocean-50">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-ocean-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <Waves className="text-ocean-500 h-7 w-7" />
-                <h1 className="text-xl font-bold text-ocean-900">SwimTracker</h1>
-              </div>
-              <nav className="hidden md:flex space-x-6">
-                <a href="#" className="text-ocean-500 font-medium border-b-2 border-ocean-500 pb-1">
-                  カレンダー
-                </a>
-                <a href="#" className="text-ocean-600 hover:text-ocean-500 transition-colors">
-                  選手管理
-                </a>
-                <a href="#" className="text-ocean-600 hover:text-ocean-500 transition-colors">
-                  レポート
-                </a>
-              </nav>
+        <div className="px-3 sm:px-4">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center space-x-2">
+              <Waves className="text-ocean-500 h-6 w-6 sm:h-7 sm:w-7" />
+              <h1 className="text-lg sm:text-xl font-bold text-ocean-900">SwimTracker</h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Button 
                 onClick={handleExportImage}
                 variant="outline"
-                className="border-ocean-300 text-ocean-700 hover:bg-ocean-50 flex items-center space-x-2"
+                size="sm"
+                className="border-ocean-300 text-ocean-700 hover:bg-ocean-50 p-2"
               >
                 <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">画像出力</span>
               </Button>
               <Button 
                 onClick={handleNewTraining}
-                className="bg-ocean-500 text-white hover:bg-ocean-600 flex items-center space-x-2"
+                size="sm"
+                className="bg-ocean-500 text-white hover:bg-ocean-600 p-2"
               >
                 <Plus className="h-4 w-4" />
-                <span className="hidden sm:inline">新規トレーニング</span>
               </Button>
-              <div className="w-8 h-8 bg-ocean-500 rounded-full flex items-center justify-center">
-                <User className="text-white h-4 w-4" />
-              </div>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="px-3 sm:px-4 py-4">
         {/* Calendar Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
-          <div className="flex items-center space-x-4">
-            <h2 className="text-2xl font-bold text-ocean-900">
-              {format(currentDate, 'yyyy年M月')}
-            </h2>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handlePreviousMonth}
-                className="p-2 text-ocean-600 hover:text-ocean-500 hover:bg-ocean-100"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleNextMonth}
-                className="p-2 text-ocean-600 hover:text-ocean-500 hover:bg-ocean-100"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl sm:text-2xl font-bold text-ocean-900">
+            {format(currentDate, 'yyyy年M月')}
+          </h2>
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handlePreviousMonth}
+              className="p-2 text-ocean-600 hover:text-ocean-500 hover:bg-ocean-100"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleNextMonth}
+              className="p-2 text-ocean-600 hover:text-ocean-500 hover:bg-ocean-100"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
           </div>
-
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Calendar Grid */}
-          <div className="lg:col-span-3" ref={calendarRef}>
+        {/* Calendar Grid - スマホでは1列表示 */}
+        <div className="space-y-4">
+          <div ref={calendarRef}>
             <CalendarGrid
               currentDate={currentDate}
               trainingSessions={trainingSessions}
@@ -207,8 +188,8 @@ export default function Calendar() {
             />
           </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
+          {/* Sidebar - スマホでは下に表示 */}
+          <div className="lg:hidden">
             <TrainingSidebar
               todaysSessions={todaysSessions}
               monthStats={monthStats}

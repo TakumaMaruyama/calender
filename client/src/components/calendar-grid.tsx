@@ -59,12 +59,12 @@ export function CalendarGrid({
               key={index}
               onClick={() => onDateClick(day.dateString)}
               className={`
-                h-24 sm:h-32 p-2 border-r border-b border-ocean-100 cursor-pointer transition-colors
+                h-20 sm:h-24 lg:h-32 p-1 sm:p-2 border-r border-b border-ocean-100 cursor-pointer transition-colors
                 ${!day.isCurrentMonth ? 'bg-gray-50' : 'hover:bg-ocean-50'}
-                ${day.isToday ? 'bg-pool-50 border-l-4 border-l-pool-500' : ''}
+                ${day.isToday ? 'bg-pool-50 border-l-2 sm:border-l-4 border-l-pool-500' : ''}
               `}
             >
-              <div className={`text-sm font-medium mb-1 ${
+              <div className={`text-xs sm:text-sm font-medium mb-1 ${
                 day.isToday 
                   ? 'text-pool-600 font-bold' 
                   : day.isCurrentMonth 
@@ -74,16 +74,16 @@ export function CalendarGrid({
                 {format(day.date, 'd')}
               </div>
               
-              <div className="space-y-1 w-full">
+              <div className="space-y-0.5 sm:space-y-1 w-full">
                 {sessions.slice(0, 2).map((session) => {
                   // titleまたはtypeどちらかを表示
-                  const displayText = session.title || getTrainingTypeLabel(session.type);
+                  const displayText = session.title || getTrainingTypeLabel(session.type || '');
                   const colorClass = session.type ? getTrainingTypeColor(session.type) : 'bg-gray-500';
                   
                   return (
                     <div
                       key={session.id}
-                      className={`${colorClass} text-white text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 group relative`}
+                      className={`${colorClass} text-white text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded cursor-pointer hover:opacity-80 group relative`}
                       onClick={(e) => {
                         e.stopPropagation();
                         // 削除確認を表示
@@ -94,15 +94,15 @@ export function CalendarGrid({
                       }}
                       title={displayText} // ツールチップで全文表示
                     >
-                      <div className="pr-4 truncate">
+                      <div className="pr-3 sm:pr-4 truncate text-xs">
                         {displayText}
                       </div>
-                      <span className="opacity-0 group-hover:opacity-100 absolute right-1 top-1/2 transform -translate-y-1/2">×</span>
+                      <span className="opacity-0 group-hover:opacity-100 absolute right-0.5 sm:right-1 top-1/2 transform -translate-y-1/2 text-xs">×</span>
                     </div>
                   );
                 })}
                 {sessions.length > 2 && (
-                  <div className="text-xs text-ocean-600 px-2">
+                  <div className="text-xs text-ocean-600 px-1 sm:px-2">
                     +{sessions.length - 2} 他
                   </div>
                 )}

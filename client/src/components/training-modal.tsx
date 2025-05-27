@@ -141,9 +141,9 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-md w-full max-h-[95vh] overflow-y-auto m-2">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-ocean-900">
+          <DialogTitle className="text-lg sm:text-xl font-bold text-ocean-900">
             新規トレーニング
           </DialogTitle>
         </DialogHeader>
