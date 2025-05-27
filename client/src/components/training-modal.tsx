@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
@@ -32,11 +32,12 @@ import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 
 const formSchema = z.object({
-  title: z.string().min(1, "タイトルを入力してください"),
+  title: z.string().min(1, "トレーニング名を選択してください"),
   type: z.string().min(1, "トレーニング種類を選択してください"),
   date: z.string().min(1, "日付を選択してください"),
   startTime: z.string().min(1, "開始時間を入力してください"),
   endTime: z.string().optional(),
+  competitionName: z.string().optional(),
   isRecurring: z.boolean().default(false),
   recurringPattern: z.string().nullable().optional(),
   recurringEndDate: z.string().nullable().optional(),
@@ -52,6 +53,7 @@ interface TrainingModalProps {
 
 export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalProps) {
   const { toast } = useToast();
+  const [selectedTrainingName, setSelectedTrainingName] = useState("");
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -61,6 +63,7 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
       date: selectedDate || "",
       startTime: "",
       endTime: "",
+      competitionName: "",
       isRecurring: false,
       recurringPattern: null,
       recurringEndDate: null,
@@ -69,8 +72,14 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
 
   const createSessionMutation = useMutation({
     mutationFn: async (data: FormData) => {
+      // 大会の場合は大会名をタイトルに含める
+      const finalTitle = data.title === "大会" && data.competitionName 
+        ? `大会: ${data.competitionName}`
+        : data.title;
+
       const response = await apiRequest("POST", "/api/training-sessions", {
         ...data,
+        title: finalTitle,
         strokes: null,
         distance: null,
         intensity: null,
@@ -131,17 +140,51 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                   <FormLabel className="text-sm font-medium text-ocean-700">
                     トレーニング名
                   </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="例: 自由形スプリント練習"
-                      className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
-                      {...field}
-                    />
-                  </FormControl>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedTrainingName(value);
+                    }} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="border-ocean-200 focus:ring-ocean-500">
+                        <SelectValue placeholder="選択してください" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="ミニレク">ミニレク</SelectItem>
+                      <SelectItem value="外">外</SelectItem>
+                      <SelectItem value="ミニ授業">ミニ授業</SelectItem>
+                      <SelectItem value="大会">大会</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {selectedTrainingName === "大会" && (
+              <FormField
+                control={form.control}
+                name="competitionName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-ocean-700">
+                      大会名
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="例: 春季水泳大会"
+                        className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
@@ -158,10 +201,13 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="aerobic">有酸素</SelectItem>
                       <SelectItem value="sprint">スプリント</SelectItem>
-                      <SelectItem value="technique">技術練習</SelectItem>
-                      <SelectItem value="strength">筋力トレーニング</SelectItem>
+                      <SelectItem value="form">フォーム</SelectItem>
+                      <SelectItem value="endurance_low">持久力（低）</SelectItem>
+                      <SelectItem value="endurance_medium">持久力（中）</SelectItem>
+                      <SelectItem value="endurance_high">持久力（高）</SelectItem>
+                      <SelectItem value="competition_practice">大会練習</SelectItem>
+                      <SelectItem value="no_practice">※練習は無し</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />

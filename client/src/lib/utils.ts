@@ -8,14 +8,20 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getTrainingTypeColor(type: string): string {
   switch (type) {
-    case 'aerobic':
-      return 'bg-ocean-500';
     case 'sprint':
       return 'bg-pool-500';
-    case 'technique':
+    case 'form':
       return 'bg-swimmer';
-    case 'strength':
+    case 'endurance_low':
+      return 'bg-ocean-500';
+    case 'endurance_medium':
+      return 'bg-ocean-600';
+    case 'endurance_high':
+      return 'bg-ocean-700';
+    case 'competition_practice':
       return 'bg-energy';
+    case 'no_practice':
+      return 'bg-gray-400';
     default:
       return 'bg-gray-500';
   }
@@ -23,14 +29,20 @@ export function getTrainingTypeColor(type: string): string {
 
 export function getTrainingTypeLabel(type: string): string {
   switch (type) {
-    case 'aerobic':
-      return '有酸素';
     case 'sprint':
       return 'スプリント';
-    case 'technique':
-      return '技術練習';
-    case 'strength':
-      return '筋力トレーニング';
+    case 'form':
+      return 'フォーム';
+    case 'endurance_low':
+      return '持久力（低）';
+    case 'endurance_medium':
+      return '持久力（中）';
+    case 'endurance_high':
+      return '持久力（高）';
+    case 'competition_practice':
+      return '大会練習';
+    case 'no_practice':
+      return '※練習は無し';
     default:
       return type;
   }

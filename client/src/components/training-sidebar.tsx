@@ -72,10 +72,13 @@ export function TrainingSidebar({ todaysSessions, monthStats }: TrainingSidebarP
           <h3 className="text-lg font-semibold text-ocean-900 mb-4">トレーニング種類</h3>
           <div className="space-y-3">
             {[
-              { type: 'aerobic', label: '有酸素' },
               { type: 'sprint', label: 'スプリント' },
-              { type: 'technique', label: '技術練習' },
-              { type: 'strength', label: '筋力トレーニング' }
+              { type: 'form', label: 'フォーム' },
+              { type: 'endurance_low', label: '持久力（低）' },
+              { type: 'endurance_medium', label: '持久力（中）' },
+              { type: 'endurance_high', label: '持久力（高）' },
+              { type: 'competition_practice', label: '大会練習' },
+              { type: 'no_practice', label: '※練習は無し' }
             ].map(({ type, label }) => (
               <div key={type} className="flex items-center space-x-3">
                 <div className={`w-4 h-4 ${getTrainingTypeColor(type)} rounded`}></div>
