@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 100% 98%; /* #F0F8FF */
+  --foreground: 215 28% 17%; /* #1E293B */
+  --muted: 210 40% 95%; /* #E0F2FE */
+  --muted-foreground: 215 16% 47%; /* #64748B */
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 28% 17%;
+  --card: 0 0% 100%;
+  --card-foreground: 215 28% 17%;
+  --border: 214 32% 91%; /* #E2E8F0 */
+  --input: 214 32% 91%;
+  --primary: 207 90% 40%; /* #0066CC */
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 95%;
+  --secondary-foreground: 215 25% 27%;
+  --accent: 210 40% 95%;
+  --accent-foreground: 215 25% 27%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 215 28% 17%;
+  --radius: 0.5rem;
+  
+  /* Custom swimming theme colors */
+  --ocean-50: 240 100% 98%; /* #F0F8FF */
+  --ocean-100: 210 40% 95%; /* #E0F2FE */
+  --ocean-500: 207 90% 40%; /* #0066CC */
+  --ocean-600: 211 83% 32%; /* #0052A3 */
+  --ocean-700: 216 76% 24%; /* #003D7A */
+  --ocean-900: 215 28% 17%; /* #1E293B */
+  
+  --pool-50: 196 100% 95%; /* #F0FBFF */
+  --pool-400: 199 89% 48%; /* #38BDF8 */
+  --pool-500: 195 100% 44%; /* #00A3E0 */
+  --pool-600: 200 98% 39%; /* #0284C7 */
+  
+  --energy: 16 100% 60%; /* #FF6B35 */
+  --swimmer: 142 76% 39%; /* #00C851 */
+  --lane: 45 100% 50%; /* #FFB300 */
+}
+
+.dark {
+  --background: 215 28% 17%;
+  --foreground: 210 40% 98%;
+  --muted: 215 28% 17%;
+  --muted-foreground: 215 20% 65%;
+  --popover: 215 28% 17%;
+  --popover-foreground: 210 40% 98%;
+  --card: 215 28% 17%;
+  --card-foreground: 210 40% 98%;
+  --border: 215 28% 17%;
+  --input: 215 28% 17%;
+  --primary: 207 90% 54%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 215 28% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --accent: 215 28% 17%;
+  --accent-foreground: 210 40% 98%;
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 216 34% 17%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom utility classes for swimming theme */
+.bg-ocean-50 { background-color: hsl(var(--ocean-50)); }
+.bg-ocean-100 { background-color: hsl(var(--ocean-100)); }
+.bg-ocean-500 { background-color: hsl(var(--ocean-500)); }
+.bg-ocean-600 { background-color: hsl(var(--ocean-600)); }
+.bg-ocean-700 { background-color: hsl(var(--ocean-700)); }
+.bg-ocean-900 { background-color: hsl(var(--ocean-900)); }
+
+.bg-pool-50 { background-color: hsl(var(--pool-50)); }
+.bg-pool-400 { background-color: hsl(var(--pool-400)); }
+.bg-pool-500 { background-color: hsl(var(--pool-500)); }
+.bg-pool-600 { background-color: hsl(var(--pool-600)); }
+
+.bg-energy { background-color: hsl(var(--energy)); }
+.bg-swimmer { background-color: hsl(var(--swimmer)); }
+.bg-lane { background-color: hsl(var(--lane)); }
+
+.text-ocean-50 { color: hsl(var(--ocean-50)); }
+.text-ocean-100 { color: hsl(var(--ocean-100)); }
+.text-ocean-500 { color: hsl(var(--ocean-500)); }
+.text-ocean-600 { color: hsl(var(--ocean-600)); }
+.text-ocean-700 { color: hsl(var(--ocean-700)); }
+.text-ocean-900 { color: hsl(var(--ocean-900)); }
+
+.text-pool-400 { color: hsl(var(--pool-400)); }
+.text-pool-500 { color: hsl(var(--pool-500)); }
+.text-pool-600 { color: hsl(var(--pool-600)); }
+
+.text-energy { color: hsl(var(--energy)); }
+.text-swimmer { color: hsl(var(--swimmer)); }
+.text-lane { color: hsl(var(--lane)); }
+
+.border-ocean-100 { border-color: hsl(var(--ocean-100)); }
+.border-ocean-200 { border-color: hsl(var(--ocean-200) / 0.2); }
+.border-ocean-300 { border-color: hsl(var(--ocean-300) / 0.3); }
+.border-ocean-500 { border-color: hsl(var(--ocean-500)); }
+
+.border-pool-500 { border-color: hsl(var(--pool-500)); }
+
+.hover\:bg-ocean-50:hover { background-color: hsl(var(--ocean-50)); }
+.hover\:bg-ocean-600:hover { background-color: hsl(var(--ocean-600)); }
+.hover\:text-ocean-500:hover { color: hsl(var(--ocean-500)); }
