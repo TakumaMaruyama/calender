@@ -37,6 +37,14 @@ export const attendance = pgTable("attendance", {
   attended: boolean("attended").default(false),
 });
 
+export const leaderSchedule = pgTable("leader_schedule", {
+  id: serial("id").primaryKey(),
+  swimmerId: integer("swimmer_id").notNull(),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  isActive: boolean("is_active").default(true),
+});
+
 export const insertSwimmerSchema = createInsertSchema(swimmers).omit({
   id: true,
 });
@@ -54,6 +62,10 @@ export const insertAttendanceSchema = createInsertSchema(attendance).omit({
   id: true,
 });
 
+export const insertLeaderScheduleSchema = createInsertSchema(leaderSchedule).omit({
+  id: true,
+});
+
 export type InsertSwimmer = z.infer<typeof insertSwimmerSchema>;
 export type Swimmer = typeof swimmers.$inferSelect;
 
@@ -62,3 +74,6 @@ export type TrainingSession = typeof trainingSessions.$inferSelect;
 
 export type InsertAttendance = z.infer<typeof insertAttendanceSchema>;
 export type Attendance = typeof attendance.$inferSelect;
+
+export type InsertLeaderSchedule = z.infer<typeof insertLeaderScheduleSchema>;
+export type LeaderSchedule = typeof leaderSchedule.$inferSelect;

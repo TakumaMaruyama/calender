@@ -2,12 +2,15 @@ import {
   swimmers, 
   trainingSessions, 
   attendance,
+  leaderSchedule,
   type Swimmer, 
   type InsertSwimmer,
   type TrainingSession,
   type InsertTrainingSession,
   type Attendance,
-  type InsertAttendance
+  type InsertAttendance,
+  type LeaderSchedule,
+  type InsertLeaderSchedule
 } from "@shared/schema";
 
 export interface IStorage {
