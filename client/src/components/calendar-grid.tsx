@@ -2,7 +2,8 @@ import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { generateCalendarDays, getTrainingTypeColor, getTrainingTypeLabel } from "@/lib/utils";
-import type { TrainingSession } from "@shared/schema";
+import { useQuery } from "@tanstack/react-query";
+import type { TrainingSession, Swimmer } from "@shared/schema";
 
 interface CalendarGridProps {
   currentDate: Date;
@@ -71,7 +72,10 @@ export function CalendarGrid({
                     ? 'text-ocean-900' 
                     : 'text-gray-400'
               }`}>
-                {format(day.date, 'd')}
+                <div className="flex items-center justify-between">
+                  <span>{format(day.date, 'd')}</span>
+                  <LeaderName date={day.dateString} />
+                </div>
               </div>
               
               <div className="space-y-0.5 sm:space-y-1 w-full">
@@ -118,5 +122,21 @@ export function CalendarGrid({
         })}
       </div>
     </Card>
+  );
+}
+
+// リーダー名表示コンポーネント
+function LeaderName({ date }: { date: string }) {
+  const { data: leader } = useQuery({
+    queryKey: ['/api/leader', date],
+    enabled: !!date,
+  });
+
+  if (!leader) return null;
+
+  return (
+    <span className="text-xs text-pool-600 font-medium bg-pool-100 px-1 rounded">
+      {leader.name}
+    </span>
   );
 }
