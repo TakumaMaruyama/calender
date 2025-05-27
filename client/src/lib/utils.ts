@@ -9,15 +9,15 @@ export function cn(...inputs: ClassValue[]) {
 export function getTrainingTypeColor(type: string): string {
   switch (type) {
     case 'sprint':
-      return 'bg-pool-500';
+      return 'bg-red-500';
     case 'form':
-      return 'bg-swimmer';
+      return 'bg-green-500';
     case 'endurance_low':
-      return 'bg-ocean-500';
+      return 'bg-blue-400';
     case 'endurance_medium':
-      return 'bg-ocean-600';
+      return 'bg-blue-500';
     case 'endurance_high':
-      return 'bg-ocean-700';
+      return 'bg-blue-600';
     case 'competition_practice':
       return 'bg-energy';
     case 'no_practice':
