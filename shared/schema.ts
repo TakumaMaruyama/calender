@@ -12,8 +12,8 @@ export const swimmers = pgTable("swimmers", {
 
 export const trainingSessions = pgTable("training_sessions", {
   id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  type: text("type").notNull(), // aerobic, sprint, technique, strength
+  title: text("title"), // オプショナル
+  type: text("type"), // オプショナル
   date: date("date").notNull(),
   startTime: time("start_time").notNull(),
   endTime: time("end_time"),
@@ -41,6 +41,8 @@ export const insertSwimmerSchema = createInsertSchema(swimmers).omit({
 
 export const insertTrainingSessionSchema = createInsertSchema(trainingSessions).omit({
   id: true,
+}).refine((data) => data.title || data.type, {
+  message: "トレーニング名またはトレーニング種類のどちらかを選択してください",
 });
 
 export const insertAttendanceSchema = createInsertSchema(attendance).omit({

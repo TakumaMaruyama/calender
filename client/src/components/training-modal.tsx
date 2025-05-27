@@ -80,24 +80,29 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
         ? `大会: ${data.competitionName}`
         : data.title;
 
-      const response = await apiRequest("POST", "/api/training-sessions", {
-        title: finalTitle || null,
-        type: data.type || null,
+      const requestData: any = {
         date: data.date,
-        startTime: "00:00", // ダミー値
-        endTime: null,
+        startTime: "00:00",
         isRecurring: data.isRecurring,
-        recurringPattern: data.recurringPattern || null,
-        recurringEndDate: data.recurringEndDate || null,
-        weekdays: selectedWeekdays,
-        maxOccurrences: data.maxOccurrences || null,
-        strokes: null,
-        distance: null,
-        intensity: null,
-        lanes: null,
-        menuDetails: null,
-        coachNotes: null,
-      });
+      };
+
+      // titleまたはtypeのどちらかのみを含める
+      if (finalTitle) {
+        requestData.title = finalTitle;
+      }
+      if (data.type) {
+        requestData.type = data.type;
+      }
+
+      // 繰り返し設定がある場合のみ追加
+      if (data.isRecurring) {
+        if (data.recurringPattern) requestData.recurringPattern = data.recurringPattern;
+        if (data.recurringEndDate) requestData.recurringEndDate = data.recurringEndDate;
+        if (selectedWeekdays.length > 0) requestData.weekdays = selectedWeekdays;
+        if (data.maxOccurrences) requestData.maxOccurrences = data.maxOccurrences;
+      }
+
+      const response = await apiRequest("POST", "/api/training-sessions", requestData);
       return response.json();
     },
     onSuccess: () => {
