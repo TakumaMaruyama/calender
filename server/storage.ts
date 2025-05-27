@@ -163,7 +163,133 @@ export class MemStorage implements IStorage {
     const id = this.currentSessionId++;
     const session: TrainingSession = { ...insertSession, id };
     this.trainingSessions.set(id, session);
+
+    // 繰り返し設定がある場合は追加のセッションを生成
+    if (insertSession.isRecurring && insertSession.recurringPattern) {
+      this.generateRecurringSessions(insertSession);
+    }
+
     return session;
+  }
+
+  private generateRecurringSessions(baseSession: InsertTrainingSession): void {
+    if (!baseSession.recurringPattern) return;
+
+    const startDate = new Date(baseSession.date);
+    const endDate = baseSession.recurringEndDate ? new Date(baseSession.recurringEndDate) : null;
+    const maxOccurrences = baseSession.maxOccurrences || 50; // デフォルト最大50回
+    
+    let currentDate = new Date(startDate);
+    let count = 0;
+
+    while (count < maxOccurrences) {
+      // 次の日付を計算
+      switch (baseSession.recurringPattern) {
+        case 'daily':
+          currentDate.setDate(currentDate.getDate() + 1);
+          break;
+        case 'weekly':
+          if (baseSession.weekdays && baseSession.weekdays.length > 0) {
+            // 指定された曜日のみ
+            this.generateWeeklyByWeekdays(baseSession, startDate, endDate, maxOccurrences);
+            return;
+          } else {
+            currentDate.setDate(currentDate.getDate() + 7);
+          }
+          break;
+        case 'biweekly':
+          currentDate.setDate(currentDate.getDate() + 14);
+          break;
+        case 'monthly':
+          currentDate.setMonth(currentDate.getMonth() + 1);
+          break;
+        default:
+          return;
+      }
+
+      // 終了日をチェック
+      if (endDate && currentDate > endDate) {
+        break;
+      }
+
+      // 新しいセッションを作成
+      const newId = this.currentSessionId++;
+      const newSession: TrainingSession = {
+        ...baseSession,
+        id: newId,
+        date: currentDate.toISOString().split('T')[0],
+        isRecurring: false, // 生成されたセッションは繰り返しマークを外す
+        recurringPattern: null,
+        recurringEndDate: null
+      };
+      
+      this.trainingSessions.set(newId, newSession);
+      count++;
+
+      // 日付が未来すぎる場合は停止（1年後まで）
+      const oneYearFromNow = new Date();
+      oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+      if (currentDate > oneYearFromNow) {
+        break;
+      }
+    }
+  }
+
+  private generateWeeklyByWeekdays(baseSession: InsertTrainingSession, startDate: Date, endDate: Date | null, maxOccurrences: number): void {
+    if (!baseSession.weekdays || baseSession.weekdays.length === 0) return;
+
+    const weekdays = baseSession.weekdays.map(d => parseInt(d)); // 文字列を数値に変換
+    let count = 0;
+    let currentWeek = new Date(startDate);
+    
+    // 最初の週から開始
+    currentWeek.setDate(currentWeek.getDate() - currentWeek.getDay()); // その週の日曜日に設定
+
+    while (count < maxOccurrences) {
+      for (const weekday of weekdays) {
+        if (count >= maxOccurrences) break;
+
+        const sessionDate = new Date(currentWeek);
+        sessionDate.setDate(sessionDate.getDate() + weekday);
+
+        // 開始日より前はスキップ
+        if (sessionDate <= startDate) continue;
+
+        // 終了日をチェック
+        if (endDate && sessionDate > endDate) return;
+
+        // 新しいセッションを作成
+        const newId = this.currentSessionId++;
+        const newSession: TrainingSession = {
+          ...baseSession,
+          id: newId,
+          date: sessionDate.toISOString().split('T')[0],
+          type: baseSession.type || null,
+          title: baseSession.title || null,
+          endTime: baseSession.endTime || null,
+          strokes: baseSession.strokes || null,
+          distance: baseSession.distance || null,
+          intensity: baseSession.intensity || null,
+          lanes: baseSession.lanes || null,
+          menuDetails: baseSession.menuDetails || null,
+          coachNotes: baseSession.coachNotes || null,
+          isRecurring: false,
+          recurringPattern: null,
+          recurringEndDate: null
+        };
+        
+        this.trainingSessions.set(newId, newSession);
+        count++;
+
+        // 日付が未来すぎる場合は停止
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+        if (sessionDate > oneYearFromNow) return;
+      }
+      
+      // 次の週へ
+      currentWeek.setDate(currentWeek.getDate() + 7);
+    }
   }
 
   async updateTrainingSession(id: number, updateData: Partial<InsertTrainingSession>): Promise<TrainingSession | undefined> {

@@ -26,6 +26,8 @@ export const trainingSessions = pgTable("training_sessions", {
   isRecurring: boolean("is_recurring").default(false),
   recurringPattern: text("recurring_pattern"), // daily, weekly, monthly
   recurringEndDate: date("recurring_end_date"),
+  weekdays: text("weekdays").array(), // 曜日の配列
+  maxOccurrences: integer("max_occurrences"), // 最大繰り返し回数
 });
 
 export const attendance = pgTable("attendance", {
