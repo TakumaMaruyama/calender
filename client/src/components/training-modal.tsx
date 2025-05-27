@@ -152,24 +152,6 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-ocean-700">日付</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
