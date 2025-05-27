@@ -74,7 +74,7 @@ export function CalendarGrid({
                 {format(day.date, 'd')}
               </div>
               
-              <div className="space-y-1">
+              <div className="space-y-1 w-full">
                 {sessions.slice(0, 2).map((session) => {
                   // titleまたはtypeどちらかを表示
                   const displayText = session.title || getTrainingTypeLabel(session.type);
@@ -83,7 +83,7 @@ export function CalendarGrid({
                   return (
                     <div
                       key={session.id}
-                      className={`${colorClass} text-white text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 group flex items-center justify-between overflow-x-auto whitespace-nowrap`}
+                      className={`${colorClass} text-white text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 group w-full min-w-0`}
                       onClick={(e) => {
                         e.stopPropagation();
                         // 削除確認を表示
@@ -92,8 +92,22 @@ export function CalendarGrid({
                           window.dispatchEvent(new CustomEvent('deleteTraining', { detail: session.id }));
                         }
                       }}
+                      style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        overflow: 'hidden'
+                      }}
                     >
-                      <span className="flex-1 overflow-x-auto">{displayText}</span>
+                      <div 
+                        className="flex-1 min-w-0" 
+                        style={{ 
+                          overflowX: 'auto',
+                          whiteSpace: 'nowrap',
+                          scrollbarWidth: 'thin'
+                        }}
+                      >
+                        {displayText}
+                      </div>
                       <span className="opacity-0 group-hover:opacity-100 ml-1 flex-shrink-0">×</span>
                     </div>
                   );
