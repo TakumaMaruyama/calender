@@ -1,14 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format, addMonths, subMonths } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Plus, User, Waves, Filter } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, User, Waves, Filter, Download } from "lucide-react";
 import { CalendarGrid } from "@/components/calendar-grid";
 import { TrainingSidebar } from "@/components/training-sidebar";
 import { TrainingModal } from "@/components/training-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
 import type { TrainingSession } from "@shared/schema";
 
 export default function Calendar() {
@@ -17,6 +18,7 @@ export default function Calendar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const { toast } = useToast();
+  const calendarRef = useRef<HTMLDivElement>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth() + 1;
@@ -89,6 +91,36 @@ export default function Calendar() {
     setIsModalOpen(true);
   };
 
+  const handleExportImage = async () => {
+    if (!calendarRef.current) return;
+
+    try {
+      const canvas = await html2canvas(calendarRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+
+      // 画像をダウンロード
+      const link = document.createElement('a');
+      link.download = `calendar_${format(currentDate, 'yyyy-MM')}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+
+      toast({
+        title: "成功",
+        description: "カレンダー画像をダウンロードしました",
+      });
+    } catch (error) {
+      toast({
+        title: "エラー",
+        description: "画像の生成に失敗しました",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-ocean-50">
       {/* Header */}
@@ -113,6 +145,14 @@ export default function Calendar() {
               </nav>
             </div>
             <div className="flex items-center space-x-4">
+              <Button 
+                onClick={handleExportImage}
+                variant="outline"
+                className="border-ocean-300 text-ocean-700 hover:bg-ocean-50 flex items-center space-x-2"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">画像出力</span>
+              </Button>
               <Button 
                 onClick={handleNewTraining}
                 className="bg-ocean-500 text-white hover:bg-ocean-600 flex items-center space-x-2"
@@ -193,7 +233,7 @@ export default function Calendar() {
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Calendar Grid */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-3" ref={calendarRef}>
             <CalendarGrid
               currentDate={currentDate}
               trainingSessions={trainingSessions}

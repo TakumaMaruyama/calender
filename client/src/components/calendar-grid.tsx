@@ -83,7 +83,7 @@ export function CalendarGrid({
                   return (
                     <div
                       key={session.id}
-                      className={`${colorClass} text-white text-xs px-2 py-1 rounded truncate cursor-pointer hover:opacity-80 group flex items-center justify-between`}
+                      className={`${colorClass} text-white text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 group flex items-center justify-between overflow-x-auto whitespace-nowrap`}
                       onClick={(e) => {
                         e.stopPropagation();
                         // 削除確認を表示
@@ -93,8 +93,8 @@ export function CalendarGrid({
                         }
                       }}
                     >
-                      <span className="truncate">{displayText}</span>
-                      <span className="opacity-0 group-hover:opacity-100 ml-1">×</span>
+                      <span className="flex-1 overflow-x-auto">{displayText}</span>
+                      <span className="opacity-0 group-hover:opacity-100 ml-1 flex-shrink-0">×</span>
                     </div>
                   );
                 })}
