@@ -75,14 +75,20 @@ export function CalendarGrid({
               </div>
               
               <div className="space-y-1">
-                {sessions.slice(0, 2).map((session) => (
-                  <div
-                    key={session.id}
-                    className={`${getTrainingTypeColor(session.type)} text-white text-xs px-2 py-1 rounded truncate`}
-                  >
-                    {getTrainingTypeLabel(session.type)}
-                  </div>
-                ))}
+                {sessions.slice(0, 2).map((session) => {
+                  // titleまたはtypeどちらかを表示
+                  const displayText = session.title || getTrainingTypeLabel(session.type);
+                  const colorClass = session.type ? getTrainingTypeColor(session.type) : 'bg-gray-500';
+                  
+                  return (
+                    <div
+                      key={session.id}
+                      className={`${colorClass} text-white text-xs px-2 py-1 rounded truncate`}
+                    >
+                      {displayText}
+                    </div>
+                  );
+                })}
                 {sessions.length > 2 && (
                   <div className="text-xs text-ocean-600 px-2">
                     +{sessions.length - 2} 他
