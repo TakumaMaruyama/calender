@@ -34,23 +34,35 @@ export interface IStorage {
   getAttendance(sessionId: number): Promise<Attendance[]>;
   createAttendance(attendance: InsertAttendance): Promise<Attendance>;
   updateAttendance(id: number, attended: boolean): Promise<Attendance | undefined>;
+
+  // Leader Schedule
+  getLeaderForDate(date: string): Promise<Swimmer | null>;
+  getAllLeaderSchedules(): Promise<LeaderSchedule[]>;
+  createLeaderSchedule(schedule: InsertLeaderSchedule): Promise<LeaderSchedule>;
+  updateLeaderSchedule(id: number, schedule: Partial<InsertLeaderSchedule>): Promise<LeaderSchedule | undefined>;
+  deleteLeaderSchedule(id: number): Promise<boolean>;
+  generateLeaderSchedule(startDate: string, swimmers: Swimmer[]): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
   private swimmers: Map<number, Swimmer>;
   private trainingSessions: Map<number, TrainingSession>;
   private attendance: Map<number, Attendance>;
+  private leaderSchedules: Map<number, LeaderSchedule>;
   private currentSwimmerId: number;
   private currentSessionId: number;
   private currentAttendanceId: number;
+  private currentLeaderScheduleId: number;
 
   constructor() {
     this.swimmers = new Map();
     this.trainingSessions = new Map();
     this.attendance = new Map();
+    this.leaderSchedules = new Map();
     this.currentSwimmerId = 1;
     this.currentSessionId = 1;
     this.currentAttendanceId = 1;
+    this.currentLeaderScheduleId = 1;
 
     // Initialize with some sample data
     this.initializeSampleData();
@@ -329,6 +341,119 @@ export class MemStorage implements IStorage {
     const updatedAttendance = { ...attendance, attended };
     this.attendance.set(id, updatedAttendance);
     return updatedAttendance;
+  }
+
+  // Leader Schedule methods
+  async getLeaderForDate(date: string): Promise<Swimmer | null> {
+    const targetDate = new Date(date);
+    
+    for (const schedule of this.leaderSchedules.values()) {
+      if (!schedule.isActive) continue;
+      
+      const start = new Date(schedule.startDate);
+      const end = new Date(schedule.endDate);
+      
+      if (targetDate >= start && targetDate <= end) {
+        return this.swimmers.get(schedule.swimmerId) || null;
+      }
+    }
+    
+    return null;
+  }
+
+  async getAllLeaderSchedules(): Promise<LeaderSchedule[]> {
+    return Array.from(this.leaderSchedules.values());
+  }
+
+  async createLeaderSchedule(insertSchedule: InsertLeaderSchedule): Promise<LeaderSchedule> {
+    const id = this.currentLeaderScheduleId++;
+    const schedule: LeaderSchedule = { 
+      ...insertSchedule, 
+      id,
+      isActive: insertSchedule.isActive ?? true
+    };
+    this.leaderSchedules.set(id, schedule);
+    return schedule;
+  }
+
+  async updateLeaderSchedule(id: number, updateData: Partial<InsertLeaderSchedule>): Promise<LeaderSchedule | undefined> {
+    const schedule = this.leaderSchedules.get(id);
+    if (!schedule) return undefined;
+    
+    const updatedSchedule = { ...schedule, ...updateData };
+    this.leaderSchedules.set(id, updatedSchedule);
+    return updatedSchedule;
+  }
+
+  async deleteLeaderSchedule(id: number): Promise<boolean> {
+    return this.leaderSchedules.delete(id);
+  }
+
+  async generateLeaderSchedule(startDate: string, swimmers: Swimmer[]): Promise<void> {
+    if (swimmers.length === 0) return;
+
+    const start = new Date(startDate);
+    const today = new Date();
+    
+    // 開始日が過去の場合は今日から開始
+    if (start < today) {
+      start.setTime(today.getTime());
+    }
+
+    // 月曜日から開始するように調整
+    const dayOfWeek = start.getDay();
+    if (dayOfWeek !== 1) { // 月曜日でない場合
+      const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+      start.setDate(start.getDate() + daysUntilMonday);
+    }
+
+    // 既存のスケジュールを無効化
+    for (const schedule of this.leaderSchedules.values()) {
+      if (schedule.isActive) {
+        schedule.isActive = false;
+      }
+    }
+
+    // 新しいスケジュールを生成（1年分）
+    let currentSwimmerIndex = 0;
+    let currentDate = new Date(start);
+    const endOfYear = new Date(start);
+    endOfYear.setFullYear(endOfYear.getFullYear() + 1);
+
+    while (currentDate < endOfYear) {
+      const swimmer = swimmers[currentSwimmerIndex % swimmers.length];
+      
+      // 3日間のスケジュールを作成（月曜〜水曜、金曜〜日曜）
+      const scheduleEndDate = new Date(currentDate);
+      
+      // 月曜日の場合は水曜日まで
+      if (currentDate.getDay() === 1) {
+        scheduleEndDate.setDate(scheduleEndDate.getDate() + 2); // 水曜日
+      }
+      // 金曜日の場合は日曜日まで
+      else if (currentDate.getDay() === 5) {
+        scheduleEndDate.setDate(scheduleEndDate.getDate() + 2); // 日曜日
+      }
+
+      await this.createLeaderSchedule({
+        swimmerId: swimmer.id,
+        startDate: currentDate.toISOString().split('T')[0],
+        endDate: scheduleEndDate.toISOString().split('T')[0],
+        isActive: true
+      });
+
+      // 次のリーダーへ
+      currentSwimmerIndex++;
+
+      // 次の更新日へ（月曜日または金曜日）
+      if (currentDate.getDay() === 1) {
+        // 月曜日の場合、次の金曜日へ
+        currentDate.setDate(currentDate.getDate() + 4);
+      } else {
+        // 金曜日の場合、次の月曜日へ
+        currentDate.setDate(currentDate.getDate() + 3);
+      }
+    }
   }
 }
 
