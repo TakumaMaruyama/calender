@@ -14,7 +14,6 @@ import type { TrainingSession } from "@shared/schema";
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'month' | 'week'>('month');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const { toast } = useToast();
@@ -194,41 +193,7 @@ export default function Calendar() {
               </Button>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <div className="flex bg-white rounded-lg border border-ocean-200 overflow-hidden">
-              <Button
-                variant={viewMode === 'month' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('month')}
-                className={`px-4 py-2 text-sm font-medium ${
-                  viewMode === 'month' 
-                    ? 'bg-ocean-500 text-white' 
-                    : 'text-ocean-600 hover:bg-ocean-50'
-                }`}
-              >
-                月間
-              </Button>
-              <Button
-                variant={viewMode === 'week' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('week')}
-                className={`px-4 py-2 text-sm font-medium ${
-                  viewMode === 'week' 
-                    ? 'bg-ocean-500 text-white' 
-                    : 'text-ocean-600 hover:bg-ocean-50'
-                }`}
-              >
-                週間
-              </Button>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-ocean-600 hover:text-ocean-500 p-2 hover:bg-white"
-            >
-              <Filter className="h-4 w-4" />
-            </Button>
-          </div>
+
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">

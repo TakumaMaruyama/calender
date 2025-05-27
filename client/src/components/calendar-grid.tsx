@@ -83,7 +83,7 @@ export function CalendarGrid({
                   return (
                     <div
                       key={session.id}
-                      className={`${colorClass} text-white text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 group w-full min-w-0`}
+                      className={`${colorClass} text-white text-xs px-2 py-1 rounded cursor-pointer hover:opacity-80 group relative`}
                       onClick={(e) => {
                         e.stopPropagation();
                         // 削除確認を表示
@@ -92,23 +92,12 @@ export function CalendarGrid({
                           window.dispatchEvent(new CustomEvent('deleteTraining', { detail: session.id }));
                         }
                       }}
-                      style={{ 
-                        display: 'flex',
-                        alignItems: 'center',
-                        overflow: 'hidden'
-                      }}
+                      title={displayText} // ツールチップで全文表示
                     >
-                      <div 
-                        className="flex-1 min-w-0" 
-                        style={{ 
-                          overflowX: 'auto',
-                          whiteSpace: 'nowrap',
-                          scrollbarWidth: 'thin'
-                        }}
-                      >
+                      <div className="pr-4 truncate">
                         {displayText}
                       </div>
-                      <span className="opacity-0 group-hover:opacity-100 ml-1 flex-shrink-0">×</span>
+                      <span className="opacity-0 group-hover:opacity-100 absolute right-1 top-1/2 transform -translate-y-1/2">×</span>
                     </div>
                   );
                 })}
