@@ -19,11 +19,13 @@ export default function Calendar() {
 
   const { data: trainingSessions = [], isLoading } = useQuery<TrainingSession[]>({
     queryKey: ['/api/training-sessions/month', year, month],
+    queryFn: () => fetch(`/api/training-sessions/month/${year}/${month}`).then(res => res.json()),
   });
 
   const todayString = format(new Date(), 'yyyy-MM-dd');
   const { data: todaysSessions = [] } = useQuery<TrainingSession[]>({
     queryKey: ['/api/training-sessions/date', todayString],
+    queryFn: () => fetch(`/api/training-sessions/date/${todayString}`).then(res => res.json()),
   });
 
   const { data: monthStats } = useQuery({
