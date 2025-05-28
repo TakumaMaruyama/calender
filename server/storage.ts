@@ -393,13 +393,7 @@ export class MemStorage implements IStorage {
     if (swimmers.length === 0) return;
 
     const start = new Date(startDate);
-    const today = new Date();
     
-    // 開始日が過去の場合は今日から開始
-    if (start < today) {
-      start.setTime(today.getTime());
-    }
-
     // 既存のスケジュールを無効化
     for (const schedule of Array.from(this.leaderSchedules.values())) {
       if (schedule.isActive) {
@@ -427,12 +421,8 @@ export class MemStorage implements IStorage {
         isActive: true
       });
 
-      // 次のリーダーへ（連続しないようにスキップ）
-      currentSwimmerIndex++;
-      if (swimmers.length > 1) {
-        // 2人以上いる場合は、連続しないように次の人をスキップ
-        currentSwimmerIndex = currentSwimmerIndex % swimmers.length;
-      }
+      // 次のリーダーへ（連続しないように順番に交代）
+      currentSwimmerIndex = (currentSwimmerIndex + 1) % swimmers.length;
 
       // 次の3日間期間へ移動
       currentDate.setDate(currentDate.getDate() + 3);
