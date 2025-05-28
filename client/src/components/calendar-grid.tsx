@@ -125,8 +125,16 @@ export function CalendarGrid({
   );
 }
 
-// リーダー名表示コンポーネント（3日交代システム）
+// リーダー名表示コンポーネント（月〜水、金〜日の3日交代、月・金のみ表示）
 function LeaderName({ date }: { date: string }) {
+  const targetDate = new Date(date);
+  const dayOfWeek = targetDate.getDay();
+  
+  // 月曜日(1)と金曜日(5)のみ表示
+  if (dayOfWeek !== 1 && dayOfWeek !== 5) {
+    return null;
+  }
+
   // ローカルストレージからリーダーリストを取得
   const savedLeaders = localStorage.getItem('swimtracker-leaders');
   const leaders = savedLeaders ? JSON.parse(savedLeaders) : [
@@ -152,12 +160,12 @@ function LeaderName({ date }: { date: string }) {
     return null;
   }
 
-  // 基準日（2025年5月28日）から3日交代でリーダーを計算
-  const baseDate = new Date('2025-05-28');
-  const targetDate = new Date(date);
-  const daysDiff = Math.floor((targetDate.getTime() - baseDate.getTime()) / (24 * 60 * 60 * 1000));
-  const periodIndex = Math.floor(daysDiff / 3); // 3日ごとの期間
-  const leaderIndex = periodIndex % leaders.length;
+  // 基準日（2025年5月26日の月曜日）からの週数を計算
+  const baseDate = new Date('2025-05-26'); // 月曜日を基準にする
+  const weekNumber = Math.floor((targetDate.getTime() - baseDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  
+  // 2週間ごとにリーダーが交代（月〜水、金〜日の担当）
+  const leaderIndex = Math.floor(weekNumber / 2) % leaders.length;
   const currentLeader = leaders[leaderIndex];
 
   if (!currentLeader) {
