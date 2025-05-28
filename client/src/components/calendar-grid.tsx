@@ -135,11 +135,15 @@ function LeaderName({ date }: { date: string }) {
     return null;
   }
 
-  // 簡単なリーダー名のローテーション
-  const leaders = ["田中", "佐藤", "山田", "鈴木"];
+  // ローカルストレージからリーダーリストを取得
+  const savedLeaders = localStorage.getItem('swimtracker-leaders');
+  const leaders = savedLeaders ? JSON.parse(savedLeaders) : [
+    { name: "田中" }, { name: "佐藤" }, { name: "山田" }, { name: "鈴木" }
+  ];
+  
   const weekNumber = Math.floor((targetDate.getTime() - new Date(2025, 4, 26).getTime()) / (7 * 24 * 60 * 60 * 1000));
   const leaderIndex = Math.floor(weekNumber / 2) % leaders.length;
-  const leaderName = leaders[leaderIndex];
+  const leaderName = leaders[leaderIndex]?.name || "未設定";
 
   return (
     <span className="text-xs text-pool-600 font-medium bg-pool-100 px-1 rounded">

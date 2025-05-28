@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,22 +21,40 @@ export function LeaderManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // リーダーリストを取得（仮の実装）
-  const { data: leaders = [], isLoading } = useQuery({
-    queryKey: ['/api/leaders/list'],
-    initialData: [
-      { id: 1, name: "田中", order: 1 },
-      { id: 2, name: "佐藤", order: 2 },
-      { id: 3, name: "山田", order: 3 },
-      { id: 4, name: "鈴木", order: 4 }
-    ]
-  });
+  // リーダーリストの状態管理（ローカルストレージから読み込み）
+  const [leaders, setLeaders] = useState<Leader[]>([]);
+
+  // 初期化時にローカルストレージからデータを読み込み
+  useEffect(() => {
+    const savedLeaders = localStorage.getItem('swimtracker-leaders');
+    if (savedLeaders) {
+      setLeaders(JSON.parse(savedLeaders));
+    } else {
+      // 初期データ
+      const defaultLeaders = [
+        { id: 1, name: "田中", order: 1 },
+        { id: 2, name: "佐藤", order: 2 },
+        { id: 3, name: "山田", order: 3 },
+        { id: 4, name: "鈴木", order: 4 }
+      ];
+      setLeaders(defaultLeaders);
+      localStorage.setItem('swimtracker-leaders', JSON.stringify(defaultLeaders));
+    }
+  }, []);
+
+  // リーダーリストが変更されたらローカルストレージに保存
+  useEffect(() => {
+    if (leaders.length > 0) {
+      localStorage.setItem('swimtracker-leaders', JSON.stringify(leaders));
+    }
+  }, [leaders]);
 
   // リーダー追加
   const addLeaderMutation = useMutation({
     mutationFn: async (name: string) => {
-      // 実際のAPIコールの代わりに、ローカル状態を更新
-      return { id: Date.now(), name, order: leaders.length + 1 };
+      const newLeader = { id: Date.now(), name, order: leaders.length + 1 };
+      setLeaders(prev => [...prev, newLeader]);
+      return newLeader;
     },
     onSuccess: () => {
       setNewLeaderName("");
@@ -44,14 +62,13 @@ export function LeaderManagement() {
         title: "リーダーを追加しました",
         description: `${newLeaderName}をリーダーリストに追加しました`,
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/leaders/list'] });
     }
   });
 
   // リーダー削除
   const deleteLeaderMutation = useMutation({
     mutationFn: async (id: number) => {
-      // 実際のAPIコールの代わりに、成功を返す
+      setLeaders(prev => prev.filter(leader => leader.id !== id));
       return { success: true };
     },
     onSuccess: () => {
@@ -59,14 +76,15 @@ export function LeaderManagement() {
         title: "リーダーを削除しました",
         description: "リーダーリストから削除しました",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/leaders/list'] });
     }
   });
 
   // リーダー名編集
   const editLeaderMutation = useMutation({
     mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      // 実際のAPIコールの代わりに、成功を返す
+      setLeaders(prev => prev.map(leader => 
+        leader.id === id ? { ...leader, name } : leader
+      ));
       return { success: true };
     },
     onSuccess: () => {
@@ -76,7 +94,6 @@ export function LeaderManagement() {
         title: "リーダー名を更新しました",
         description: "変更が保存されました",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/leaders/list'] });
     }
   });
 
