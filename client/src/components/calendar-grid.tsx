@@ -125,18 +125,25 @@ export function CalendarGrid({
   );
 }
 
-// リーダー名表示コンポーネント
+// リーダー名表示コンポーネント（月曜と金曜のみ表示）
 function LeaderName({ date }: { date: string }) {
-  const { data: leader } = useQuery({
-    queryKey: ['/api/leader', date],
-    enabled: !!date,
-  });
+  const targetDate = new Date(date);
+  const dayOfWeek = targetDate.getDay();
+  
+  // 月曜日(1)と金曜日(5)のみ表示
+  if (dayOfWeek !== 1 && dayOfWeek !== 5) {
+    return null;
+  }
 
-  if (!leader) return null;
+  // 簡単なリーダー名のローテーション
+  const leaders = ["田中", "佐藤", "山田", "鈴木"];
+  const weekNumber = Math.floor((targetDate.getTime() - new Date(2025, 4, 26).getTime()) / (7 * 24 * 60 * 60 * 1000));
+  const leaderIndex = Math.floor(weekNumber / 2) % leaders.length;
+  const leaderName = leaders[leaderIndex];
 
   return (
     <span className="text-xs text-pool-600 font-medium bg-pool-100 px-1 rounded">
-      {leader.name}
+      {leaderName}
     </span>
   );
 }

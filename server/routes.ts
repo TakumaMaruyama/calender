@@ -182,6 +182,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/leaders", async (req, res) => {
+    try {
+      const schedule = await storage.createLeaderSchedule(req.body);
+      res.status(201).json(schedule);
+    } catch (error) {
+      res.status(500).json({ error: "リーダースケジュール作成に失敗しました" });
+    }
+  });
+
   app.post("/api/leaders/generate", async (req, res) => {
     try {
       const { startDate } = req.body;
