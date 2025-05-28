@@ -127,18 +127,46 @@ export function CalendarGrid({
 
 // リーダー名表示コンポーネント（3日交代システム）
 function LeaderName({ date }: { date: string }) {
-  const { data: leader } = useQuery<{ id: number; name: string; email: string | null; lane: number | null; level: string } | null>({
-    queryKey: ['/api/leader', date],
-    enabled: !!date,
-  });
+  // ローカルストレージからリーダーリストを取得
+  const savedLeaders = localStorage.getItem('swimtracker-leaders');
+  const leaders = savedLeaders ? JSON.parse(savedLeaders) : [
+    { name: "ののか", order: 1 },
+    { name: "有理", order: 2 },
+    { name: "龍之介", order: 3 },
+    { name: "彩音", order: 4 },
+    { name: "勘太", order: 5 },
+    { name: "悠喜", order: 6 },
+    { name: "佳翔", order: 7 },
+    { name: "春舞", order: 8 },
+    { name: "滉介", order: 9 },
+    { name: "元翔", order: 10 },
+    { name: "百華", order: 11 },
+    { name: "澪心", order: 12 },
+    { name: "礼志", order: 13 },
+    { name: "桔伊", order: 14 },
+    { name: "虹日", order: 15 },
+    { name: "弥広", order: 16 }
+  ];
 
-  if (!leader) {
+  if (leaders.length === 0) {
+    return null;
+  }
+
+  // 基準日（2025年5月28日）から3日交代でリーダーを計算
+  const baseDate = new Date('2025-05-28');
+  const targetDate = new Date(date);
+  const daysDiff = Math.floor((targetDate.getTime() - baseDate.getTime()) / (24 * 60 * 60 * 1000));
+  const periodIndex = Math.floor(daysDiff / 3); // 3日ごとの期間
+  const leaderIndex = periodIndex % leaders.length;
+  const currentLeader = leaders[leaderIndex];
+
+  if (!currentLeader) {
     return null;
   }
 
   return (
     <span className="text-xs text-pool-600 font-medium bg-pool-100 px-1 rounded">
-      {leader.name}
+      {currentLeader.name}
     </span>
   );
 }
