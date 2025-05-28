@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format, addMonths, subMonths } from "date-fns";
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Plus, User, Waves, Filter, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, User, Waves, Filter, Download, Users } from "lucide-react";
 import { CalendarGrid } from "@/components/calendar-grid";
 import { TrainingSidebar } from "@/components/training-sidebar";
 import { TrainingModal } from "@/components/training-modal";
@@ -131,6 +132,15 @@ export default function Calendar() {
               <h1 className="text-lg sm:text-xl font-bold text-ocean-900">SwimTracker</h1>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
+              <Link href="/leaders">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="border-ocean-300 text-ocean-700 hover:bg-ocean-50 p-2"
+                >
+                  <Users className="h-4 w-4" />
+                </Button>
+              </Link>
               <Button 
                 onClick={handleExportImage}
                 variant="outline"

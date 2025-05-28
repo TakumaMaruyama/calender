@@ -5,12 +5,14 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Calendar from "@/pages/calendar";
 import NotFound from "@/pages/not-found";
+import LeaderManagementPage from "@/pages/leader-management";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Calendar} />
       <Route path="/calendar" component={Calendar} />
+      <Route path="/leaders" component={LeaderManagementPage} />
       <Route component={NotFound} />
     </Switch>
   );
