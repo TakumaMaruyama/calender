@@ -125,29 +125,20 @@ export function CalendarGrid({
   );
 }
 
-// リーダー名表示コンポーネント（月曜と金曜のみ表示）
+// リーダー名表示コンポーネント（3日交代システム）
 function LeaderName({ date }: { date: string }) {
-  const targetDate = new Date(date);
-  const dayOfWeek = targetDate.getDay();
-  
-  // 月曜日(1)と金曜日(5)のみ表示
-  if (dayOfWeek !== 1 && dayOfWeek !== 5) {
+  const { data: leader } = useQuery<{ id: number; name: string; email: string | null; lane: number | null; level: string } | null>({
+    queryKey: ['/api/leader', date],
+    enabled: !!date,
+  });
+
+  if (!leader) {
     return null;
   }
 
-  // ローカルストレージからリーダーリストを取得
-  const savedLeaders = localStorage.getItem('swimtracker-leaders');
-  const leaders = savedLeaders ? JSON.parse(savedLeaders) : [
-    { name: "田中" }, { name: "佐藤" }, { name: "山田" }, { name: "鈴木" }
-  ];
-  
-  const weekNumber = Math.floor((targetDate.getTime() - new Date(2025, 4, 26).getTime()) / (7 * 24 * 60 * 60 * 1000));
-  const leaderIndex = Math.floor(weekNumber / 2) % leaders.length;
-  const leaderName = leaders[leaderIndex]?.name || "未設定";
-
   return (
     <span className="text-xs text-pool-600 font-medium bg-pool-100 px-1 rounded">
-      {leaderName}
+      {leader.name}
     </span>
   );
 }

@@ -400,15 +400,8 @@ export class MemStorage implements IStorage {
       start.setTime(today.getTime());
     }
 
-    // 月曜日から開始するように調整
-    const dayOfWeek = start.getDay();
-    if (dayOfWeek !== 1) { // 月曜日でない場合
-      const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
-      start.setDate(start.getDate() + daysUntilMonday);
-    }
-
     // 既存のスケジュールを無効化
-    for (const schedule of this.leaderSchedules.values()) {
+    for (const schedule of Array.from(this.leaderSchedules.values())) {
       if (schedule.isActive) {
         schedule.isActive = false;
       }
@@ -423,17 +416,9 @@ export class MemStorage implements IStorage {
     while (currentDate < endOfYear) {
       const swimmer = swimmers[currentSwimmerIndex % swimmers.length];
       
-      // 3日間のスケジュールを作成（月曜〜水曜、金曜〜日曜）
+      // 3日間のスケジュールを作成
       const scheduleEndDate = new Date(currentDate);
-      
-      // 月曜日の場合は水曜日まで
-      if (currentDate.getDay() === 1) {
-        scheduleEndDate.setDate(scheduleEndDate.getDate() + 2); // 水曜日
-      }
-      // 金曜日の場合は日曜日まで
-      else if (currentDate.getDay() === 5) {
-        scheduleEndDate.setDate(scheduleEndDate.getDate() + 2); // 日曜日
-      }
+      scheduleEndDate.setDate(scheduleEndDate.getDate() + 2); // 3日間（開始日含む）
 
       await this.createLeaderSchedule({
         swimmerId: swimmer.id,
@@ -442,17 +427,15 @@ export class MemStorage implements IStorage {
         isActive: true
       });
 
-      // 次のリーダーへ
+      // 次のリーダーへ（連続しないようにスキップ）
       currentSwimmerIndex++;
-
-      // 次の更新日へ（月曜日または金曜日）
-      if (currentDate.getDay() === 1) {
-        // 月曜日の場合、次の金曜日へ
-        currentDate.setDate(currentDate.getDate() + 4);
-      } else {
-        // 金曜日の場合、次の月曜日へ
-        currentDate.setDate(currentDate.getDate() + 3);
+      if (swimmers.length > 1) {
+        // 2人以上いる場合は、連続しないように次の人をスキップ
+        currentSwimmerIndex = currentSwimmerIndex % swimmers.length;
       }
+
+      // 次の3日間期間へ移動
+      currentDate.setDate(currentDate.getDate() + 3);
     }
   }
 }
