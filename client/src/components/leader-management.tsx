@@ -30,12 +30,24 @@ export function LeaderManagement() {
     if (savedLeaders) {
       setLeaders(JSON.parse(savedLeaders));
     } else {
-      // 初期データ
+      // 初期データ（あなたの16人のリーダーリスト）
       const defaultLeaders = [
-        { id: 1, name: "田中", order: 1 },
-        { id: 2, name: "佐藤", order: 2 },
-        { id: 3, name: "山田", order: 3 },
-        { id: 4, name: "鈴木", order: 4 }
+        { id: 1, name: "ののか", order: 1 },
+        { id: 2, name: "有理", order: 2 },
+        { id: 3, name: "龍之介", order: 3 },
+        { id: 4, name: "彩音", order: 4 },
+        { id: 5, name: "勘太", order: 5 },
+        { id: 6, name: "悠喜", order: 6 },
+        { id: 7, name: "佳翔", order: 7 },
+        { id: 8, name: "春舞", order: 8 },
+        { id: 9, name: "滉介", order: 9 },
+        { id: 10, name: "元翔", order: 10 },
+        { id: 11, name: "百華", order: 11 },
+        { id: 12, name: "澪心", order: 12 },
+        { id: 13, name: "礼志", order: 13 },
+        { id: 14, name: "桔伊", order: 14 },
+        { id: 15, name: "虹日", order: 15 },
+        { id: 16, name: "弥広", order: 16 }
       ];
       setLeaders(defaultLeaders);
       localStorage.setItem('swimtracker-leaders', JSON.stringify(defaultLeaders));

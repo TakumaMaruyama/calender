@@ -160,19 +160,22 @@ function LeaderName({ date }: { date: string }) {
     return null;
   }
 
+  // order順にソートしてから計算
+  const sortedLeaders = [...leaders].sort((a, b) => a.order - b.order);
+  
   // 基準日（2025年5月26日の月曜日）からの計算
   const baseDate = new Date('2025-05-26');
   const weekNumber = Math.floor((targetDate.getTime() - baseDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
   
-  // 月曜日と金曜日で異なるリーダーを表示（6日間で1人のリーダーが担当）
+  // 月曜日と金曜日で異なるリーダーを表示
   let leaderIndex;
   if (dayOfWeek === 1) { // 月曜日
-    leaderIndex = Math.floor(weekNumber / 2) % leaders.length;
+    leaderIndex = Math.floor(weekNumber / 2) % sortedLeaders.length;
   } else { // 金曜日
-    leaderIndex = (Math.floor(weekNumber / 2) + 1) % leaders.length;
+    leaderIndex = (Math.floor(weekNumber / 2) + 1) % sortedLeaders.length;
   }
   
-  const currentLeader = leaders[leaderIndex];
+  const currentLeader = sortedLeaders[leaderIndex];
 
   if (!currentLeader) {
     return null;
