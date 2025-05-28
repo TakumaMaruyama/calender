@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trash2, Plus, Edit3, Check, X } from "lucide-react";
+import { Trash2, Plus, Edit3, Check, X, ChevronUp, ChevronDown } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -61,7 +61,7 @@ export function LeaderManagement() {
     }
   }, [leaders]);
 
-  // リーダー追加
+  // リーダー追加（最後に追加）
   const addLeaderMutation = useMutation({
     mutationFn: async (name: string) => {
       const newLeader = { id: Date.now(), name, order: leaders.length + 1 };
@@ -118,6 +118,49 @@ export function LeaderManagement() {
     if (editingId && editName.trim()) {
       editLeaderMutation.mutate({ id: editingId, name: editName.trim() });
     }
+  };
+
+  // 順番を上に移動
+  const moveUp = (id: number) => {
+    setLeaders(prev => {
+      const sortedLeaders = [...prev].sort((a, b) => a.order - b.order);
+      const index = sortedLeaders.findIndex(leader => leader.id === id);
+      if (index > 0) {
+        const newLeaders = [...sortedLeaders];
+        [newLeaders[index], newLeaders[index - 1]] = [newLeaders[index - 1], newLeaders[index]];
+        // order値を再計算
+        return newLeaders.map((leader, idx) => ({ ...leader, order: idx + 1 }));
+      }
+      return prev;
+    });
+  };
+
+  // 順番を下に移動
+  const moveDown = (id: number) => {
+    setLeaders(prev => {
+      const sortedLeaders = [...prev].sort((a, b) => a.order - b.order);
+      const index = sortedLeaders.findIndex(leader => leader.id === id);
+      if (index < sortedLeaders.length - 1) {
+        const newLeaders = [...sortedLeaders];
+        [newLeaders[index], newLeaders[index + 1]] = [newLeaders[index + 1], newLeaders[index]];
+        // order値を再計算
+        return newLeaders.map((leader, idx) => ({ ...leader, order: idx + 1 }));
+      }
+      return prev;
+    });
+  };
+
+  // 特定位置に挿入
+  const insertAt = (name: string, position: number) => {
+    const newLeader = { id: Date.now(), name: name.trim(), order: position };
+    setLeaders(prev => {
+      const sortedLeaders = [...prev].sort((a, b) => a.order - b.order);
+      // 挿入位置以降のorderを1つずつ増加
+      const updatedLeaders = sortedLeaders.map(leader => 
+        leader.order >= position ? { ...leader, order: leader.order + 1 } : leader
+      );
+      return [...updatedLeaders, newLeader].sort((a, b) => a.order - b.order);
+    });
   };
 
   const handleCancelEdit = () => {
@@ -198,10 +241,30 @@ export function LeaderManagement() {
                 <div className="flex-1 flex items-center justify-between">
                   <span className="font-medium">{leader.name}</span>
                   <div className="flex gap-1">
+                    {/* 順番変更ボタン */}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => moveUp(leader.id)}
+                      disabled={index === 0}
+                      title="上に移動"
+                    >
+                      <ChevronUp className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => moveDown(leader.id)}
+                      disabled={index === leaders.length - 1}
+                      title="下に移動"
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => handleEdit(leader)}
+                      title="名前編集"
                     >
                       <Edit3 className="h-4 w-4" />
                     </Button>
@@ -210,6 +273,7 @@ export function LeaderManagement() {
                       variant="ghost"
                       onClick={() => deleteLeaderMutation.mutate(leader.id)}
                       disabled={deleteLeaderMutation.isPending}
+                      title="削除"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
