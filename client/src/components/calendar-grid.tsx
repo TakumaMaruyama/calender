@@ -165,15 +165,28 @@ function LeaderName({ date }: { date: string }) {
   
   // 基準日（2025年5月26日の月曜日）からの計算
   const baseDate = new Date('2025-05-26');
-  const weekNumber = Math.floor((targetDate.getTime() - baseDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+  const daysDiff = Math.floor((targetDate.getTime() - baseDate.getTime()) / (24 * 60 * 60 * 1000));
   
-  // 月曜日と金曜日で異なるリーダーを表示
-  let leaderIndex;
-  if (dayOfWeek === 1) { // 月曜日
-    leaderIndex = Math.floor(weekNumber / 2) % sortedLeaders.length;
-  } else { // 金曜日
-    leaderIndex = (Math.floor(weekNumber / 2) + 1) % sortedLeaders.length;
+  // 月曜日と金曜日のカウントを別々に計算
+  let displayCount = 0;
+  
+  // 基準日から対象日までの月曜日と金曜日の回数を数える
+  for (let i = 0; i <= daysDiff; i++) {
+    const checkDate = new Date(baseDate);
+    checkDate.setDate(checkDate.getDate() + i);
+    const checkDay = checkDate.getDay();
+    
+    if (checkDay === 1 || checkDay === 5) { // 月曜日または金曜日
+      if (i === daysDiff && checkDay === dayOfWeek) {
+        break; // 対象日に到達
+      }
+      if (i < daysDiff) {
+        displayCount++;
+      }
+    }
   }
+  
+  const leaderIndex = displayCount % sortedLeaders.length;
   
   const currentLeader = sortedLeaders[leaderIndex];
 
