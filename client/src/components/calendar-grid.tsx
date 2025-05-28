@@ -160,12 +160,18 @@ function LeaderName({ date }: { date: string }) {
     return null;
   }
 
-  // 基準日（2025年5月26日の月曜日）からの週数を計算
-  const baseDate = new Date('2025-05-26'); // 月曜日を基準にする
+  // 基準日（2025年5月26日の月曜日）からの計算
+  const baseDate = new Date('2025-05-26');
   const weekNumber = Math.floor((targetDate.getTime() - baseDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
   
-  // 2週間ごとにリーダーが交代（月〜水、金〜日の担当）
-  const leaderIndex = Math.floor(weekNumber / 2) % leaders.length;
+  // 月曜日と金曜日で異なるリーダーを表示（6日間で1人のリーダーが担当）
+  let leaderIndex;
+  if (dayOfWeek === 1) { // 月曜日
+    leaderIndex = Math.floor(weekNumber / 2) % leaders.length;
+  } else { // 金曜日
+    leaderIndex = (Math.floor(weekNumber / 2) + 1) % leaders.length;
+  }
+  
   const currentLeader = leaders[leaderIndex];
 
   if (!currentLeader) {
