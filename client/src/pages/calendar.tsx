@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Plus, User, Waves, Filter, Download, Users }
 import { CalendarGrid } from "@/components/calendar-grid";
 import { TrainingSidebar } from "@/components/training-sidebar";
 import { TrainingModal } from "@/components/training-modal";
+import { LeaderDateModal } from "@/components/leader-date-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ import type { TrainingSession } from "@shared/schema";
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLeaderModalOpen, setIsLeaderModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const { toast } = useToast();
   const calendarRef = useRef<HTMLDivElement>(null);
@@ -84,6 +86,11 @@ export default function Calendar() {
   const handleDateClick = (dateString: string) => {
     setSelectedDate(dateString);
     setIsModalOpen(true);
+  };
+
+  const handleLeaderSet = (dateString: string) => {
+    setSelectedDate(dateString);
+    setIsLeaderModalOpen(true);
   };
 
   const handleNewTraining = () => {

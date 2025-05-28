@@ -42,6 +42,7 @@ export interface IStorage {
   updateLeaderSchedule(id: number, schedule: Partial<InsertLeaderSchedule>): Promise<LeaderSchedule | undefined>;
   deleteLeaderSchedule(id: number): Promise<boolean>;
   generateLeaderSchedule(startDate: string, swimmers: Swimmer[]): Promise<void>;
+  setLeaderForDate(date: string, swimmerId: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -423,6 +424,55 @@ export class MemStorage implements IStorage {
 
       // 次のリーダーへ（連続しないように順番に交代）
       currentSwimmerIndex = (currentSwimmerIndex + 1) % swimmers.length;
+
+      // 次の3日間期間へ移動
+      currentDate.setDate(currentDate.getDate() + 3);
+    }
+  }
+
+  async setLeaderForDate(date: string, swimmerId: number): Promise<void> {
+    const targetDate = new Date(date);
+    const swimmers = await this.getAllSwimmers();
+    
+    // 指定されたswimmerIdが存在するかチェック
+    const selectedSwimmer = swimmers.find(s => s.id === swimmerId);
+    if (!selectedSwimmer) {
+      throw new Error('指定されたスイマーが見つかりません');
+    }
+    
+    // 既存のスケジュールを無効化
+    for (const schedule of Array.from(this.leaderSchedules.values())) {
+      if (schedule.isActive) {
+        schedule.isActive = false;
+      }
+    }
+
+    // 指定された日付からローテーションを開始
+    // まず、スイマーリストから選択されたスイマーの順番を取得
+    const sortedSwimmers = [...swimmers].sort((a, b) => a.id - b.id);
+    const startIndex = sortedSwimmers.findIndex(s => s.id === swimmerId);
+    
+    let currentSwimmerIndex = startIndex;
+    let currentDate = new Date(targetDate);
+    const endOfYear = new Date(targetDate);
+    endOfYear.setFullYear(endOfYear.getFullYear() + 1);
+
+    while (currentDate < endOfYear) {
+      const swimmer = sortedSwimmers[currentSwimmerIndex % sortedSwimmers.length];
+      
+      // 3日間のスケジュールを作成
+      const scheduleEndDate = new Date(currentDate);
+      scheduleEndDate.setDate(scheduleEndDate.getDate() + 2); // 3日間（開始日含む）
+
+      await this.createLeaderSchedule({
+        swimmerId: swimmer.id,
+        startDate: currentDate.toISOString().split('T')[0],
+        endDate: scheduleEndDate.toISOString().split('T')[0],
+        isActive: true
+      });
+
+      // 次のリーダーへ
+      currentSwimmerIndex = (currentSwimmerIndex + 1) % sortedSwimmers.length;
 
       // 次の3日間期間へ移動
       currentDate.setDate(currentDate.getDate() + 3);
