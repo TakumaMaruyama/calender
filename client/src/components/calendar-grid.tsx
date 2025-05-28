@@ -9,6 +9,7 @@ interface CalendarGridProps {
   currentDate: Date;
   trainingSessions: TrainingSession[];
   onDateClick: (dateString: string) => void;
+  onLeaderSet?: (dateString: string) => void;
   isLoading: boolean;
 }
 
@@ -16,6 +17,7 @@ export function CalendarGrid({
   currentDate, 
   trainingSessions, 
   onDateClick, 
+  onLeaderSet,
   isLoading 
 }: CalendarGridProps) {
   const calendarDays = generateCalendarDays(currentDate);
@@ -59,6 +61,12 @@ export function CalendarGrid({
             <div
               key={index}
               onClick={() => onDateClick(day.dateString)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                if (onLeaderSet) {
+                  onLeaderSet(day.dateString);
+                }
+              }}
               className={`
                 h-20 sm:h-24 lg:h-32 p-1 sm:p-2 border-r border-b border-ocean-100 cursor-pointer transition-colors
                 ${!day.isCurrentMonth ? 'bg-gray-50' : 'hover:bg-ocean-50'}

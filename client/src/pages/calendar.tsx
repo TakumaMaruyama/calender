@@ -201,6 +201,7 @@ export default function Calendar() {
               currentDate={currentDate}
               trainingSessions={trainingSessions}
               onDateClick={handleDateClick}
+              onLeaderSet={handleLeaderSet}
               isLoading={isLoading}
             />
           </div>
@@ -219,6 +220,13 @@ export default function Calendar() {
       <TrainingModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        selectedDate={selectedDate}
+      />
+
+      {/* Leader Date Modal */}
+      <LeaderDateModal
+        isOpen={isLeaderModalOpen}
+        onClose={() => setIsLeaderModalOpen(false)}
         selectedDate={selectedDate}
       />
     </div>
