@@ -32,9 +32,7 @@ export default function Calendar() {
 
 
 
-  const { data: monthStats } = useQuery({
-    queryKey: ['/api/statistics/month', year, month],
-  });
+
 
   // 削除機能
   const deleteMutation = useMutation({
@@ -215,9 +213,7 @@ export default function Calendar() {
 
           {/* Sidebar - スマホでは下に表示 */}
           <div className="lg:hidden">
-            <TrainingSidebar
-              monthStats={monthStats}
-            />
+            <TrainingSidebar />
           </div>
         </div>
       </div>
