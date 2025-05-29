@@ -205,6 +205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/leaders/set-for-date", async (req, res) => {
     try {
       const { date, swimmerId, leaders } = req.body;
+      console.log("リーダー設定リクエスト:", { date, swimmerId, leaders: leaders?.length || 0, firstLeader: leaders?.[0] });
       await storage.setLeaderForDate(date, swimmerId, leaders); // leadersデータも渡す
       res.status(200).json({ message: "指定された日付からリーダーローテーションを設定しました" });
     } catch (error) {

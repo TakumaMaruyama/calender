@@ -454,7 +454,9 @@ export class MemStorage implements IStorage {
     ];
     
     // 指定されたleaderIdが存在するかチェック
+    console.log("リーダー検索:", { leaderId, leadersList: leadersList.map(l => ({ id: l.id, name: l.name })) });
     const selectedLeader = leadersList.find(l => l.id === leaderId);
+    console.log("選択されたリーダー:", selectedLeader);
     if (!selectedLeader) {
       throw new Error('指定されたリーダーが見つかりません');
     }
