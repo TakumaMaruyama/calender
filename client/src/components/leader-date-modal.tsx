@@ -70,11 +70,11 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
 
   // リーダー設定のミューテーション
   const setLeaderMutation = useMutation({
-    mutationFn: async (data: { date: string; leaderId: number }) => {
+    mutationFn: async (data: { date: string; leaderId: number; leaders: Leader[] }) => {
       return await apiRequest("POST", "/api/leaders/set-for-date", { 
         date: data.date, 
         swimmerId: data.leaderId,
-        leaders: leaders
+        leaders: data.leaders
       });
     },
     onSuccess: () => {
@@ -109,6 +109,7 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
     setLeaderMutation.mutate({
       date: selectedDate,
       leaderId: parseInt(selectedLeaderId),
+      leaders: leaders,
     });
   };
 
