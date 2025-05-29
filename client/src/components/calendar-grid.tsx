@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { generateCalendarDays, getTrainingTypeColor, getTrainingTypeLabel } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { UserCheck, Plus } from "lucide-react";
 import type { TrainingSession, Swimmer } from "@shared/schema";
 
 interface CalendarGridProps {
@@ -20,10 +23,48 @@ export function CalendarGrid({
   onLeaderSet,
   isLoading 
 }: CalendarGridProps) {
+  const [longPressTimeout, setLongPressTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isLongPress, setIsLongPress] = useState(false);
   const calendarDays = generateCalendarDays(currentDate);
 
   const getSessionsForDate = (dateString: string) => {
     return trainingSessions.filter(session => session.date === dateString);
+  };
+
+  const handleTouchStart = (dateString: string) => {
+    setIsLongPress(false);
+    const timeout = setTimeout(() => {
+      setIsLongPress(true);
+      // バイブレーション（対応デバイスのみ）
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+      if (onLeaderSet) {
+        onLeaderSet(dateString);
+      }
+    }, 500); // 500ms長押しでリーダー設定モーダル表示
+    setLongPressTimeout(timeout);
+  };
+
+  const handleTouchEnd = (dateString: string) => {
+    if (longPressTimeout) {
+      clearTimeout(longPressTimeout);
+      setLongPressTimeout(null);
+    }
+    
+    // 長押しでなければ通常のクリック処理
+    if (!isLongPress) {
+      onDateClick(dateString);
+    }
+    setIsLongPress(false);
+  };
+
+  const handleTouchCancel = () => {
+    if (longPressTimeout) {
+      clearTimeout(longPressTimeout);
+      setLongPressTimeout(null);
+    }
+    setIsLongPress(false);
   };
 
   if (isLoading) {
@@ -60,6 +101,9 @@ export function CalendarGrid({
           return (
             <div
               key={index}
+              onTouchStart={() => handleTouchStart(day.dateString)}
+              onTouchEnd={() => handleTouchEnd(day.dateString)}
+              onTouchCancel={handleTouchCancel}
               onClick={() => onDateClick(day.dateString)}
               onContextMenu={(e) => {
                 e.preventDefault();
@@ -68,9 +112,10 @@ export function CalendarGrid({
                 }
               }}
               className={`
-                h-20 sm:h-24 lg:h-32 p-1 sm:p-2 border-r border-b border-ocean-100 cursor-pointer transition-colors
+                relative h-20 sm:h-24 lg:h-32 p-1 sm:p-2 border-r border-b border-ocean-100 cursor-pointer transition-colors
                 ${!day.isCurrentMonth ? 'bg-gray-50' : 'hover:bg-ocean-50'}
                 ${day.isToday ? 'bg-pool-50 border-l-2 sm:border-l-4 border-l-pool-500' : ''}
+                select-none
               `}
             >
               <div className={`text-xs sm:text-sm font-medium mb-1 ${
@@ -82,7 +127,23 @@ export function CalendarGrid({
               }`}>
                 <div className="flex items-center justify-between">
                   <span>{format(day.date, 'd')}</span>
-                  <LeaderName date={day.dateString} />
+                  <div className="flex items-center gap-1">
+                    <LeaderName date={day.dateString} />
+                    {onLeaderSet && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 w-5 p-0 text-ocean-600 hover:text-ocean-800 hover:bg-ocean-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onLeaderSet(day.dateString);
+                        }}
+                        title="リーダー設定"
+                      >
+                        <UserCheck className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
               

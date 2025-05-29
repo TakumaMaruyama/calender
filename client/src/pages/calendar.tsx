@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { format, addMonths, subMonths } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Plus, User, Waves, Filter, Download, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, User, Waves, Filter, Download, Users, UserCheck } from "lucide-react";
 import { CalendarGrid } from "@/components/calendar-grid";
 import { TrainingSidebar } from "@/components/training-sidebar";
 import { TrainingModal } from "@/components/training-modal";
@@ -159,9 +159,10 @@ export default function Calendar() {
               <Button 
                 onClick={handleNewTraining}
                 size="sm"
-                className="bg-ocean-500 text-white hover:bg-ocean-600 p-2"
+                className="bg-ocean-500 text-white hover:bg-ocean-600 px-3 py-2"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4 mr-1" />
+                <span className="hidden sm:inline">新規</span>
               </Button>
             </div>
           </div>
@@ -170,27 +171,37 @@ export default function Calendar() {
 
       <div className="px-3 sm:px-4 py-4">
         {/* Calendar Controls */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl sm:text-2xl font-bold text-ocean-900">
-            {format(currentDate, 'yyyy年M月')}
-          </h2>
-          <div className="flex items-center space-x-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handlePreviousMonth}
-              className="p-2 text-ocean-600 hover:text-ocean-500 hover:bg-ocean-100"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleNextMonth}
-              className="p-2 text-ocean-600 hover:text-ocean-500 hover:bg-ocean-100"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-xl sm:text-2xl font-bold text-ocean-900">
+              {format(currentDate, 'yyyy年M月')}
+            </h2>
+            <div className="flex items-center space-x-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handlePreviousMonth}
+                className="p-2 text-ocean-600 hover:text-ocean-500 hover:bg-ocean-100"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleNextMonth}
+                className="p-2 text-ocean-600 hover:text-ocean-500 hover:bg-ocean-100"
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Mobile操作ガイド */}
+          <div className="text-xs text-ocean-600 bg-ocean-50 px-3 py-2 rounded-lg">
+            <div className="flex items-center gap-2">
+              <UserCheck className="h-3 w-3" />
+              <span>日付の<UserCheck className="inline h-3 w-3 mx-1" />ボタンでリーダー設定 | 長押しでも設定可能</span>
+            </div>
           </div>
         </div>
 
