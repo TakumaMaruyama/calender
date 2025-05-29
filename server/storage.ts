@@ -347,14 +347,25 @@ export class MemStorage implements IStorage {
   // Leader Schedule methods
   async getLeaderForDate(date: string): Promise<{ name: string } | null> {
     const targetDate = new Date(date);
+    console.log(`リーダー検索対象日: ${date}, スケジュール数: ${this.leaderSchedules.size}`);
     
-    for (const schedule of this.leaderSchedules.values()) {
+    for (const schedule of Array.from(this.leaderSchedules.values())) {
+      console.log(`スケジュール確認:`, { 
+        id: schedule.id, 
+        swimmerId: schedule.swimmerId, 
+        startDate: schedule.startDate, 
+        endDate: schedule.endDate, 
+        isActive: schedule.isActive 
+      });
+      
       if (!schedule.isActive) continue;
       
       const start = new Date(schedule.startDate);
       const end = new Date(schedule.endDate);
       
       if (targetDate >= start && targetDate <= end) {
+        console.log(`該当スケジュール発見: ${schedule.startDate} - ${schedule.endDate}, swimmerId: ${schedule.swimmerId}`);
+        
         // リーダーIDから名前を取得するため、デフォルトリーダーリストを使用
         const defaultLeaders = [
           { id: 1, name: "ののか", order: 1 },
@@ -376,10 +387,12 @@ export class MemStorage implements IStorage {
         ];
         
         const leader = defaultLeaders.find(l => l.id === schedule.swimmerId);
+        console.log(`リーダー検索結果:`, leader);
         return leader ? { name: leader.name } : null;
       }
     }
     
+    console.log(`該当するスケジュールが見つかりませんでした`);
     return null;
   }
 

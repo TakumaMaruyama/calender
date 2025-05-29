@@ -166,9 +166,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/leader/:date", async (req, res) => {
     try {
       const { date } = req.params;
+      console.log(`リーダー情報取得リクエスト: ${date}`);
       const leader = await storage.getLeaderForDate(date);
+      console.log(`リーダー情報結果:`, leader);
       res.json(leader);
     } catch (error) {
+      console.error(`リーダー情報取得エラー:`, error);
       res.status(500).json({ message: "Failed to fetch leader" });
     }
   });
