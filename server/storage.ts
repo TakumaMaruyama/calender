@@ -122,6 +122,61 @@ export class MemStorage implements IStorage {
       recurringPattern: null,
       recurringEndDate: null
     });
+
+    // 5月のサンプルデータを追加
+    await this.createTrainingSession({
+      type: "sprint",
+      date: "2025-05-05",
+      startTime: "18:00",
+      endTime: "19:30",
+      strokes: ["freestyle"],
+      distance: 1000,
+      intensity: "high",
+      lanes: "1-8",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "ミニレク",
+      date: "2025-05-12",
+      startTime: "17:00",
+      endTime: "18:00",
+      distance: 500,
+      intensity: "easy",
+      lanes: "1-4",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      type: "form",
+      date: "2025-05-19",
+      startTime: "18:30",
+      endTime: "20:00",
+      strokes: ["butterfly", "backstroke"],
+      distance: 1200,
+      intensity: "medium",
+      lanes: "5-8",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "外",
+      date: "2025-05-26",
+      startTime: "06:00",
+      endTime: "08:00",
+      distance: 2000,
+      intensity: "medium",
+      lanes: "1-8",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
   }
 
   // Swimmers
