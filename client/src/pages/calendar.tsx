@@ -30,11 +30,7 @@ export default function Calendar() {
     queryFn: () => fetch(`/api/training-sessions/month/${year}/${month}`).then(res => res.json()),
   });
 
-  const todayString = format(new Date(), 'yyyy-MM-dd');
-  const { data: todaysSessions = [] } = useQuery<TrainingSession[]>({
-    queryKey: ['/api/training-sessions/date', todayString],
-    queryFn: () => fetch(`/api/training-sessions/date/${todayString}`).then(res => res.json()),
-  });
+
 
   const { data: monthStats } = useQuery({
     queryKey: ['/api/statistics/month', year, month],
@@ -220,7 +216,6 @@ export default function Calendar() {
           {/* Sidebar - スマホでは下に表示 */}
           <div className="lg:hidden">
             <TrainingSidebar
-              todaysSessions={todaysSessions}
               monthStats={monthStats}
             />
           </div>

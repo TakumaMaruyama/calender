@@ -1,10 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { CalendarDays, TrendingUp } from "lucide-react";
-import { getTrainingTypeColor, getTrainingTypeLabel, formatTime, formatDistance } from "@/lib/utils";
-import type { TrainingSession } from "@shared/schema";
+import { TrendingUp } from "lucide-react";
+import { getTrainingTypeColor, formatDistance } from "@/lib/utils";
 
 interface TrainingSidebarProps {
-  todaysSessions: TrainingSession[];
   monthStats?: {
     totalSessions: number;
     totalDistance: number;
@@ -12,59 +10,9 @@ interface TrainingSidebarProps {
   };
 }
 
-export function TrainingSidebar({ todaysSessions, monthStats }: TrainingSidebarProps) {
+export function TrainingSidebar({ monthStats }: TrainingSidebarProps) {
   return (
     <div className="space-y-6">
-      {/* Today's Training */}
-      <Card className="bg-white shadow-sm border border-ocean-100">
-        <CardContent className="p-6">
-          <h3 className="text-lg font-semibold text-ocean-900 mb-4 flex items-center">
-            <CalendarDays className="text-pool-500 mr-2 h-5 w-5" />
-            今日のトレーニング
-          </h3>
-          
-          {todaysSessions.length === 0 ? (
-            <p className="text-sm text-ocean-600">今日のトレーニングはありません</p>
-          ) : (
-            <div className="space-y-3">
-              {todaysSessions.map((session) => (
-                <div
-                  key={session.id}
-                  className={`bg-ocean-50 rounded-lg p-4 border-l-4 ${
-                    session.type === 'aerobic' ? 'border-ocean-500' :
-                    session.type === 'sprint' ? 'border-pool-500' :
-                    session.type === 'technique' ? 'border-swimmer' :
-                    'border-energy'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-ocean-700">
-                      {getTrainingTypeLabel(session.type)}
-                    </span>
-                    <span className="text-xs text-ocean-500">
-                      {formatTime(session.startTime)}
-                      {session.endTime && `-${formatTime(session.endTime)}`}
-                    </span>
-                  </div>
-                  
-                  {session.distance && (
-                    <div className="text-sm text-ocean-600 font-mono">
-                      {formatDistance(session.distance)} {session.strokes?.[0] && getTrainingTypeLabel(session.strokes[0])}
-                      {session.intensity && ` (${session.intensity})`}
-                    </div>
-                  )}
-                  
-                  {session.lanes && (
-                    <div className="text-xs text-ocean-500 mt-1">
-                      レーン {session.lanes}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Training Types Legend */}
       <Card className="bg-white shadow-sm border border-ocean-100">
