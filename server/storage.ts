@@ -42,7 +42,7 @@ export interface IStorage {
   updateLeaderSchedule(id: number, schedule: Partial<InsertLeaderSchedule>): Promise<LeaderSchedule | undefined>;
   deleteLeaderSchedule(id: number): Promise<boolean>;
   generateLeaderSchedule(startDate: string, swimmers: Swimmer[]): Promise<void>;
-  setLeaderForDate(date: string, leaderId: number): Promise<void>;
+  setLeaderForDate(date: string, leaderId: number, leaders?: { id: number; name: string; order: number; }[]): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -430,11 +430,11 @@ export class MemStorage implements IStorage {
     }
   }
 
-  async setLeaderForDate(date: string, leaderId: number): Promise<void> {
+  async setLeaderForDate(date: string, leaderId: number, leaders?: { id: number; name: string; order: number; }[]): Promise<void> {
     const targetDate = new Date(date);
     
-    // ローカルストレージのリーダーリストを模擬（実際のアプリではフロントエンドから渡される）
-    const leaders = [
+    // フロントエンドからリーダーデータが渡されない場合のフォールバック
+    const leadersList = leaders || [
       { id: 1, name: "ののか", order: 1 },
       { id: 2, name: "有理", order: 2 },
       { id: 3, name: "龍之介", order: 3 },
@@ -454,7 +454,7 @@ export class MemStorage implements IStorage {
     ];
     
     // 指定されたleaderIdが存在するかチェック
-    const selectedLeader = leaders.find(l => l.id === leaderId);
+    const selectedLeader = leadersList.find(l => l.id === leaderId);
     if (!selectedLeader) {
       throw new Error('指定されたリーダーが見つかりません');
     }
@@ -468,7 +468,7 @@ export class MemStorage implements IStorage {
 
     // 指定された日付からローテーションを開始
     // リーダーリストから選択されたリーダーの順番を取得
-    const sortedLeaders = [...leaders].sort((a, b) => a.order - b.order);
+    const sortedLeaders = [...leadersList].sort((a, b) => a.order - b.order);
     const startIndex = sortedLeaders.findIndex(l => l.id === leaderId);
     
     let currentLeaderIndex = startIndex;

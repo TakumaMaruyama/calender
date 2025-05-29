@@ -73,7 +73,8 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
     mutationFn: async (data: { date: string; leaderId: number }) => {
       return await apiRequest("POST", "/api/leaders/set-for-date", { 
         date: data.date, 
-        swimmerId: data.leaderId 
+        swimmerId: data.leaderId,
+        leaders: leaders
       });
     },
     onSuccess: () => {
