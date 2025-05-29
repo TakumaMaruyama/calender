@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -178,8 +178,9 @@ export function CalendarGrid({
   );
 }
 
-// リーダー名表示コンポーネント（月〜水、金〜日の3日交代、月・金のみ表示）
+// リーダー名表示コンポーネント（APIからリーダー情報を取得）
 function LeaderName({ date }: { date: string }) {
+  const [leader, setLeader] = useState<string | null>(null);
   const targetDate = new Date(date);
   const dayOfWeek = targetDate.getDay();
   
@@ -188,68 +189,32 @@ function LeaderName({ date }: { date: string }) {
     return null;
   }
 
-  // ローカルストレージからリーダーリストを取得
-  const savedLeaders = localStorage.getItem('swimtracker-leaders');
-  const leaders = savedLeaders ? JSON.parse(savedLeaders) : [
-    { name: "ののか", order: 1 },
-    { name: "有理", order: 2 },
-    { name: "龍之介", order: 3 },
-    { name: "彩音", order: 4 },
-    { name: "勘太", order: 5 },
-    { name: "悠喜", order: 6 },
-    { name: "佳翔", order: 7 },
-    { name: "春舞", order: 8 },
-    { name: "滉介", order: 9 },
-    { name: "元翔", order: 10 },
-    { name: "百華", order: 11 },
-    { name: "澪心", order: 12 },
-    { name: "礼志", order: 13 },
-    { name: "桔伊", order: 14 },
-    { name: "虹日", order: 15 },
-    { name: "弥広", order: 16 }
-  ];
+  useEffect(() => {
+    // APIからその日のリーダー情報を取得
+    fetch(`/api/leader/${date}`)
+      .then(res => {
+        if (res.ok) {
+          return res.json();
+        }
+        return null;
+      })
+      .then(data => {
+        if (data && data.name) {
+          setLeader(data.name);
+        }
+      })
+      .catch(err => {
+        console.error('リーダー情報取得エラー:', err);
+      });
+  }, [date]);
 
-  if (leaders.length === 0) {
-    return null;
-  }
-
-  // order順にソートしてから計算
-  const sortedLeaders = [...leaders].sort((a, b) => a.order - b.order);
-  
-  // 基準日（2025年5月26日の月曜日）からの計算
-  const baseDate = new Date('2025-05-26');
-  const daysDiff = Math.floor((targetDate.getTime() - baseDate.getTime()) / (24 * 60 * 60 * 1000));
-  
-  // 月曜日と金曜日のカウントを別々に計算
-  let displayCount = 0;
-  
-  // 基準日から対象日までの月曜日と金曜日の回数を数える
-  for (let i = 0; i <= daysDiff; i++) {
-    const checkDate = new Date(baseDate);
-    checkDate.setDate(checkDate.getDate() + i);
-    const checkDay = checkDate.getDay();
-    
-    if (checkDay === 1 || checkDay === 5) { // 月曜日または金曜日
-      if (i === daysDiff && checkDay === dayOfWeek) {
-        break; // 対象日に到達
-      }
-      if (i < daysDiff) {
-        displayCount++;
-      }
-    }
-  }
-  
-  const leaderIndex = displayCount % sortedLeaders.length;
-  
-  const currentLeader = sortedLeaders[leaderIndex];
-
-  if (!currentLeader) {
+  if (!leader) {
     return null;
   }
 
   return (
     <span className="text-xs text-pool-600 font-medium bg-pool-100 px-1 rounded">
-      {currentLeader.name}
+      {leader}
     </span>
   );
 }
