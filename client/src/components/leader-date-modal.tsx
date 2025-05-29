@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -19,7 +19,12 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { UserCheck, Calendar } from "lucide-react";
-import type { Swimmer } from "@shared/schema";
+
+interface Leader {
+  id: number;
+  name: string;
+  order: number;
+}
 
 interface LeaderDateModalProps {
   isOpen: boolean;
@@ -28,22 +33,47 @@ interface LeaderDateModalProps {
 }
 
 export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateModalProps) {
-  const [selectedSwimmerId, setSelectedSwimmerId] = useState<string>("");
+  const [selectedLeaderId, setSelectedLeaderId] = useState<string>("");
+  const [leaders, setLeaders] = useState<Leader[]>([]);
   const { toast } = useToast();
 
-  // スイマー一覧を取得
-  const { data: swimmers = [], isLoading: isLoadingSwimmers } = useQuery<Swimmer[]>({
-    queryKey: ["/api/swimmers"],
-    enabled: isOpen,
-  });
+  // ローカルストレージからリーダーデータを取得
+  useEffect(() => {
+    if (isOpen) {
+      const savedLeaders = localStorage.getItem('swimtracker-leaders');
+      if (savedLeaders) {
+        setLeaders(JSON.parse(savedLeaders));
+      } else {
+        // 初期データ
+        const defaultLeaders = [
+          { id: 1, name: "ののか", order: 1 },
+          { id: 2, name: "有理", order: 2 },
+          { id: 3, name: "龍之介", order: 3 },
+          { id: 4, name: "彩音", order: 4 },
+          { id: 5, name: "勘太", order: 5 },
+          { id: 6, name: "悠喜", order: 6 },
+          { id: 7, name: "佳翔", order: 7 },
+          { id: 8, name: "春舞", order: 8 },
+          { id: 9, name: "滉介", order: 9 },
+          { id: 10, name: "元翔", order: 10 },
+          { id: 11, name: "百華", order: 11 },
+          { id: 12, name: "澪心", order: 12 },
+          { id: 13, name: "礼志", order: 13 },
+          { id: 14, name: "桔伊", order: 14 },
+          { id: 15, name: "虹日", order: 15 },
+          { id: 16, name: "弥広", order: 16 }
+        ];
+        setLeaders(defaultLeaders);
+      }
+    }
+  }, [isOpen]);
 
   // リーダー設定のミューテーション
   const setLeaderMutation = useMutation({
-    mutationFn: async (data: { date: string; swimmerId: number }) => {
-      return apiRequest({
-        url: "/api/leaders/set-for-date",
-        method: "POST",
-        data,
+    mutationFn: async (data: { date: string; leaderId: number }) => {
+      return await apiRequest("/api/leaders/set-for-date", "POST", { 
+        date: data.date, 
+        swimmerId: data.leaderId 
       });
     },
     onSuccess: () => {
@@ -54,7 +84,7 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
       queryClient.invalidateQueries({ queryKey: ["/api/leaders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/leader"] });
       onClose();
-      setSelectedSwimmerId("");
+      setSelectedLeaderId("");
     },
     onError: (error: any) => {
       toast({
@@ -66,7 +96,7 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
   });
 
   const handleSubmit = () => {
-    if (!selectedDate || !selectedSwimmerId) {
+    if (!selectedDate || !selectedLeaderId) {
       toast({
         title: "エラー",
         description: "日付とリーダーを選択してください",
@@ -77,7 +107,7 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
 
     setLeaderMutation.mutate({
       date: selectedDate,
-      swimmerId: parseInt(selectedSwimmerId),
+      leaderId: parseInt(selectedLeaderId),
     });
   };
 
@@ -114,17 +144,16 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
           <div className="space-y-2">
             <Label htmlFor="leader-select">リーダーを選択</Label>
             <Select 
-              value={selectedSwimmerId} 
-              onValueChange={setSelectedSwimmerId}
-              disabled={isLoadingSwimmers}
+              value={selectedLeaderId} 
+              onValueChange={setSelectedLeaderId}
             >
               <SelectTrigger>
-                <SelectValue placeholder={isLoadingSwimmers ? "読み込み中..." : "リーダーを選択してください"} />
+                <SelectValue placeholder="リーダーを選択してください" />
               </SelectTrigger>
               <SelectContent>
-                {swimmers.map((swimmer) => (
-                  <SelectItem key={swimmer.id} value={swimmer.id.toString()}>
-                    {swimmer.name}
+                {leaders.sort((a, b) => a.order - b.order).map((leader) => (
+                  <SelectItem key={leader.id} value={leader.id.toString()}>
+                    {leader.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -143,7 +172,7 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
           </Button>
           <Button 
             onClick={handleSubmit} 
-            disabled={!selectedSwimmerId || setLeaderMutation.isPending}
+            disabled={!selectedLeaderId || setLeaderMutation.isPending}
           >
             {setLeaderMutation.isPending ? "設定中..." : "設定する"}
           </Button>
