@@ -42,7 +42,7 @@ export interface IStorage {
   updateLeaderSchedule(id: number, schedule: Partial<InsertLeaderSchedule>): Promise<LeaderSchedule | undefined>;
   deleteLeaderSchedule(id: number): Promise<boolean>;
   generateLeaderSchedule(startDate: string, swimmers: Swimmer[]): Promise<void>;
-  setLeaderForDate(date: string, swimmerId: number): Promise<void>;
+  setLeaderForDate(date: string, leaderId: number): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
