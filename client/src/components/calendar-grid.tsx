@@ -46,7 +46,7 @@ export function CalendarGrid({
     setLongPressTimeout(timeout);
   };
 
-  const handleTouchEnd = (dateString: string) => {
+  const handleTouchEnd = (dateString: string, event?: React.TouchEvent) => {
     if (longPressTimeout) {
       clearTimeout(longPressTimeout);
       setLongPressTimeout(null);
@@ -54,9 +54,20 @@ export function CalendarGrid({
     
     // 長押しでなければ通常のクリック処理
     if (!isLongPress) {
+      // タッチイベントの場合はclickイベントを防ぐ
+      if (event) {
+        event.preventDefault();
+      }
       onDateClick(dateString);
     }
     setIsLongPress(false);
+  };
+
+  const handleClick = (dateString: string, event: React.MouseEvent) => {
+    // タッチデバイスでない場合のみクリック処理
+    if (!('ontouchstart' in window)) {
+      onDateClick(dateString);
+    }
   };
 
   const handleTouchCancel = () => {
@@ -102,9 +113,9 @@ export function CalendarGrid({
             <div
               key={index}
               onTouchStart={() => handleTouchStart(day.dateString)}
-              onTouchEnd={() => handleTouchEnd(day.dateString)}
+              onTouchEnd={(e) => handleTouchEnd(day.dateString, e)}
               onTouchCancel={handleTouchCancel}
-              onClick={() => onDateClick(day.dateString)}
+              onClick={(e) => handleClick(day.dateString, e)}
               onContextMenu={(e) => {
                 e.preventDefault();
                 if (onLeaderSet) {
