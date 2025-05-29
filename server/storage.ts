@@ -36,7 +36,7 @@ export interface IStorage {
   updateAttendance(id: number, attended: boolean): Promise<Attendance | undefined>;
 
   // Leader Schedule
-  getLeaderForDate(date: string): Promise<Swimmer | null>;
+  getLeaderForDate(date: string): Promise<{ name: string } | null>;
   getAllLeaderSchedules(): Promise<LeaderSchedule[]>;
   createLeaderSchedule(schedule: InsertLeaderSchedule): Promise<LeaderSchedule>;
   updateLeaderSchedule(id: number, schedule: Partial<InsertLeaderSchedule>): Promise<LeaderSchedule | undefined>;
@@ -345,7 +345,7 @@ export class MemStorage implements IStorage {
   }
 
   // Leader Schedule methods
-  async getLeaderForDate(date: string): Promise<Swimmer | null> {
+  async getLeaderForDate(date: string): Promise<{ name: string } | null> {
     const targetDate = new Date(date);
     
     for (const schedule of this.leaderSchedules.values()) {
@@ -355,7 +355,28 @@ export class MemStorage implements IStorage {
       const end = new Date(schedule.endDate);
       
       if (targetDate >= start && targetDate <= end) {
-        return this.swimmers.get(schedule.swimmerId) || null;
+        // リーダーIDから名前を取得するため、デフォルトリーダーリストを使用
+        const defaultLeaders = [
+          { id: 1, name: "ののか", order: 1 },
+          { id: 2, name: "有理", order: 2 },
+          { id: 3, name: "龍之介", order: 3 },
+          { id: 4, name: "彩音", order: 4 },
+          { id: 5, name: "勘太", order: 5 },
+          { id: 6, name: "悠喜", order: 6 },
+          { id: 7, name: "佳翔", order: 7 },
+          { id: 8, name: "春舞", order: 8 },
+          { id: 9, name: "滉介", order: 9 },
+          { id: 10, name: "元翔", order: 10 },
+          { id: 11, name: "百華", order: 11 },
+          { id: 12, name: "澪心", order: 12 },
+          { id: 13, name: "礼志", order: 13 },
+          { id: 14, name: "桔伊", order: 14 },
+          { id: 15, name: "虹日", order: 15 },
+          { id: 16, name: "弥広", order: 16 }
+        ];
+        
+        const leader = defaultLeaders.find(l => l.id === schedule.swimmerId);
+        return leader ? { name: leader.name } : null;
       }
     }
     
