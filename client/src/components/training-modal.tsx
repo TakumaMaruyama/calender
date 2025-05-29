@@ -173,6 +173,7 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="">(空白)</SelectItem>
                       <SelectItem value="ミニレク">ミニレク</SelectItem>
                       <SelectItem value="外">外</SelectItem>
                       <SelectItem value="ミニ授業">ミニ授業</SelectItem>
