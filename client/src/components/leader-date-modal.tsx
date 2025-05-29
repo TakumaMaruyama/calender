@@ -71,7 +71,7 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
   // リーダー設定のミューテーション
   const setLeaderMutation = useMutation({
     mutationFn: async (data: { date: string; leaderId: number }) => {
-      return await apiRequest("/api/leaders/set-for-date", "POST", { 
+      return await apiRequest("POST", "/api/leaders/set-for-date", { 
         date: data.date, 
         swimmerId: data.leaderId 
       });
