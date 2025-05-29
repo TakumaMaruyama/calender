@@ -25,25 +25,50 @@ export function CalendarGrid({
 }: CalendarGridProps) {
   const [longPressTimeout, setLongPressTimeout] = useState<NodeJS.Timeout | null>(null);
   const [isLongPress, setIsLongPress] = useState(false);
+  const [touchStartPos, setTouchStartPos] = useState({ x: 0, y: 0 });
+  const [hasMoved, setHasMoved] = useState(false);
   const calendarDays = generateCalendarDays(currentDate);
 
   const getSessionsForDate = (dateString: string) => {
     return trainingSessions.filter(session => session.date === dateString);
   };
 
-  const handleTouchStart = (dateString: string) => {
+  const handleTouchStart = (dateString: string, event: React.TouchEvent) => {
     setIsLongPress(false);
+    setHasMoved(false);
+    const touch = event.touches[0];
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+    
     const timeout = setTimeout(() => {
-      setIsLongPress(true);
-      // バイブレーション（対応デバイスのみ）
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
-      if (onLeaderSet) {
-        onLeaderSet(dateString);
+      if (!hasMoved) {
+        setIsLongPress(true);
+        // バイブレーション（対応デバイスのみ）
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
+        }
+        if (onLeaderSet) {
+          onLeaderSet(dateString);
+        }
       }
     }, 500); // 500ms長押しでリーダー設定モーダル表示
     setLongPressTimeout(timeout);
+  };
+
+  const handleTouchMove = (event: React.TouchEvent) => {
+    if (!hasMoved) {
+      const touch = event.touches[0];
+      const deltaX = Math.abs(touch.clientX - touchStartPos.x);
+      const deltaY = Math.abs(touch.clientY - touchStartPos.y);
+      
+      // 10px以上動いたらスクロールと判定
+      if (deltaX > 10 || deltaY > 10) {
+        setHasMoved(true);
+        if (longPressTimeout) {
+          clearTimeout(longPressTimeout);
+          setLongPressTimeout(null);
+        }
+      }
+    }
   };
 
   const handleTouchEnd = (dateString: string, event?: React.TouchEvent) => {
@@ -52,8 +77,8 @@ export function CalendarGrid({
       setLongPressTimeout(null);
     }
     
-    // 長押しでなければ通常のクリック処理
-    if (!isLongPress) {
+    // 長押しでなく、かつ移動していなければ通常のクリック処理
+    if (!isLongPress && !hasMoved) {
       // タッチイベントの場合はclickイベントを防ぐ
       if (event) {
         event.preventDefault();
@@ -61,6 +86,7 @@ export function CalendarGrid({
       onDateClick(dateString);
     }
     setIsLongPress(false);
+    setHasMoved(false);
   };
 
   const handleClick = (dateString: string, event: React.MouseEvent) => {
@@ -112,7 +138,8 @@ export function CalendarGrid({
           return (
             <div
               key={index}
-              onTouchStart={() => handleTouchStart(day.dateString)}
+              onTouchStart={(e) => handleTouchStart(day.dateString, e)}
+              onTouchMove={handleTouchMove}
               onTouchEnd={(e) => handleTouchEnd(day.dateString, e)}
               onTouchCancel={handleTouchCancel}
               onClick={(e) => handleClick(day.dateString, e)}
