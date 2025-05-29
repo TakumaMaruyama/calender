@@ -127,23 +127,7 @@ export function CalendarGrid({
               }`}>
                 <div className="flex items-center justify-between">
                   <span>{format(day.date, 'd')}</span>
-                  <div className="flex items-center gap-1">
-                    <LeaderName date={day.dateString} />
-                    {onLeaderSet && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-5 w-5 p-0 text-ocean-600 hover:text-ocean-800 hover:bg-ocean-100"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onLeaderSet(day.dateString);
-                        }}
-                        title="リーダー設定"
-                      >
-                        <UserCheck className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
+                  <LeaderName date={day.dateString} />
                 </div>
               </div>
               

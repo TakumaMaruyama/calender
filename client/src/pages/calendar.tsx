@@ -200,7 +200,7 @@ export default function Calendar() {
           <div className="text-xs text-ocean-600 bg-ocean-50 px-3 py-2 rounded-lg">
             <div className="flex items-center gap-2">
               <UserCheck className="h-3 w-3" />
-              <span>日付の<UserCheck className="inline h-3 w-3 mx-1" />ボタンでリーダー設定 | 長押しでも設定可能</span>
+              <span>日付を長押しでリーダー設定</span>
             </div>
           </div>
         </div>
