@@ -168,41 +168,128 @@ export default function Calendar() {
 
       // 画像をダウンロード
       console.log('画像ダウンロード処理開始...');
-      const dataURL = canvas.toDataURL('image/png', 1.0);
       
-      // Blobに変換してダウンロード
-      const byteString = atob(dataURL.split(',')[1]);
-      const mimeString = dataURL.split(',')[0].split(':')[1].split(';')[0];
-      const ab = new ArrayBuffer(byteString.length);
-      const ia = new Uint8Array(ab);
-      
-      for (let i = 0; i < byteString.length; i++) {
-        ia[i] = byteString.charCodeAt(i);
-      }
-      
-      const blob = new Blob([ab], { type: mimeString });
-      const url = URL.createObjectURL(blob);
-      
-      // ダウンロードリンクを作成
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `swimming-calendar-${format(currentDate, 'yyyy-MM')}.png`;
-      
-      // ユーザーアクションとしてクリックを実行
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // リソースを解放
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 100);
-      
-      toast({
-        title: "画像保存完了",
-        description: "カレンダー画像を保存しました",
-        duration: 3000,
-      });
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          console.error('Blob生成に失敗しました');
+          toast({
+            title: "エラー",
+            description: "画像データの生成に失敗しました",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        console.log('Blob生成成功、サイズ:', blob.size);
+        
+        // 新しいウィンドウで画像を表示（保存しやすくするため）
+        const url = URL.createObjectURL(blob);
+        const newWindow = window.open();
+        
+        if (newWindow) {
+          newWindow.document.write(`
+            <html>
+              <head>
+                <title>カレンダー画像 - ${format(currentDate, 'yyyy年MM月')}</title>
+                <style>
+                  body { 
+                    margin: 0; 
+                    padding: 20px; 
+                    text-align: center; 
+                    font-family: sans-serif;
+                    background: #f0f0f0;
+                  }
+                  .container {
+                    max-width: 90%;
+                    margin: 0 auto;
+                    background: white;
+                    padding: 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                  }
+                  img { 
+                    max-width: 100%; 
+                    height: auto; 
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                  }
+                  .download-btn {
+                    display: inline-block;
+                    margin: 20px 10px;
+                    padding: 12px 24px;
+                    background: #4CAF50;
+                    color: white;
+                    text-decoration: none;
+                    border-radius: 4px;
+                    font-weight: bold;
+                  }
+                  .download-btn:hover {
+                    background: #45a049;
+                  }
+                  .info {
+                    margin-top: 15px;
+                    color: #666;
+                    font-size: 14px;
+                  }
+                </style>
+              </head>
+              <body>
+                <div class="container">
+                  <h1>スイミングカレンダー</h1>
+                  <h2>${format(currentDate, 'yyyy年MM月')}</h2>
+                  <img src="${url}" alt="カレンダー画像" />
+                  <br>
+                  <a href="${url}" download="swimming-calendar-${format(currentDate, 'yyyy-MM')}.png" class="download-btn">
+                    📥 画像をダウンロード
+                  </a>
+                  <div class="info">
+                    <p>画像を長押しして「画像を保存」または上のボタンをタップしてダウンロードしてください</p>
+                  </div>
+                </div>
+              </body>
+            </html>
+          `);
+          newWindow.document.close();
+          
+          console.log('新しいウィンドウで画像を表示しました');
+          
+          toast({
+            title: "画像を表示",
+            description: "新しいタブで画像を表示しました。長押しまたはボタンから保存してください。",
+            duration: 5000,
+          });
+        } else {
+          // ポップアップがブロックされた場合、直接ダウンロードを試行
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `swimming-calendar-${format(currentDate, 'yyyy-MM')}.png`;
+          link.style.display = 'none';
+          
+          document.body.appendChild(link);
+          
+          // マウスイベントを明示的に作成
+          const clickEvent = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+          });
+          
+          link.dispatchEvent(clickEvent);
+          document.body.removeChild(link);
+          
+          toast({
+            title: "ダウンロード実行",
+            description: "画像のダウンロードを実行しました。ブラウザの設定を確認してください。",
+            duration: 5000,
+          });
+        }
+        
+        // リソースを解放
+        setTimeout(() => {
+          URL.revokeObjectURL(url);
+        }, 5000);
+        
+      }, 'image/png', 0.95);
     } catch (error) {
       console.error('画像生成エラー:', error);
       const errorMessage = error instanceof Error ? error.message : '不明なエラー';
