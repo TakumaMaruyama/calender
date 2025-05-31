@@ -113,6 +113,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/training-sessions/:id/future", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid session ID" });
+      }
+
+      const deleted = await storage.deleteFutureTrainingSessions(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Training session not found" });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete future training sessions" });
+    }
+  });
+
   // Swimmers Routes
   app.get("/api/swimmers", async (req, res) => {
     try {

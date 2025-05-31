@@ -182,11 +182,8 @@ export function CalendarGrid({
                         className={`${colorClass} text-white px-2 py-1 rounded cursor-pointer hover:opacity-80 group relative w-full`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          // 削除確認を表示
-                          if (window.confirm(`「${displayText}」を削除しますか？`)) {
-                            // 削除処理をここに追加
-                            window.dispatchEvent(new CustomEvent('deleteTraining', { detail: session.id }));
-                          }
+                          // 削除ダイアログを表示するためのイベントを発行
+                          window.dispatchEvent(new CustomEvent('showDeleteDialog', { detail: session }));
                         }}
                         title={displayText} // ツールチップで全文表示
                       >

@@ -8,6 +8,7 @@ import { Link } from 'wouter';
 import { CalendarGrid } from '@/components/calendar-grid';
 import { TrainingModal } from '@/components/training-modal';
 import { LeaderDateModal } from '@/components/leader-date-modal';
+import { DeleteTrainingModal } from '@/components/delete-training-modal';
 import { generateCalendarDays, getTrainingTypeLabel } from '@/lib/utils';
 import type { TrainingSession } from '@shared/schema';
 

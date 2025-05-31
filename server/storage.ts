@@ -43,6 +43,7 @@ export interface IStorage {
   deleteLeaderSchedule(id: number): Promise<boolean>;
   generateLeaderSchedule(startDate: string, swimmers: Swimmer[]): Promise<void>;
   setLeaderForDate(date: string, leaderId: number, leaders?: { id: number; name: string; order: number; }[]): Promise<void>;
+  deleteFutureTrainingSessions(id: number): Promise<boolean>;
 }
 
 export class MemStorage implements IStorage {
@@ -434,6 +435,33 @@ export class MemStorage implements IStorage {
 
   async deleteTrainingSession(id: number): Promise<boolean> {
     return this.trainingSessions.delete(id);
+  }
+
+  async deleteFutureTrainingSessions(id: number): Promise<boolean> {
+    // 削除対象のセッションを取得
+    const targetSession = this.trainingSessions.get(id);
+    if (!targetSession) {
+      return false;
+    }
+
+    // この日以降の同じタイトル・タイプのセッションを削除
+    const deletedIds: number[] = [];
+    
+    for (const [sessionId, session] of this.trainingSessions) {
+      // 対象セッション以降の日付で、同じタイトル・タイプのセッションを削除
+      if (session.date >= targetSession.date && 
+          session.title === targetSession.title &&
+          session.type === targetSession.type) {
+        deletedIds.push(sessionId);
+      }
+    }
+
+    // 削除実行
+    deletedIds.forEach(sessionId => {
+      this.trainingSessions.delete(sessionId);
+    });
+
+    return deletedIds.length > 0;
   }
 
   // Attendance
