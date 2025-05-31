@@ -233,56 +233,48 @@ export default function Calendar() {
       }
 
       // 画像をダウンロード
-      console.log('画像データURL生成中...');
-      try {
-        const dataURL = canvas.toDataURL('image/png');
-        console.log('データURL生成成功、長さ:', dataURL.length);
+      console.log('画像ダウンロード処理開始...');
+      
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          console.error('Blob生成に失敗しました');
+          toast({
+            title: "エラー",
+            description: "画像データの生成に失敗しました",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        console.log('Blob生成成功、サイズ:', blob.size);
+        
+        // Blob URLを作成
+        const url = URL.createObjectURL(blob);
+        console.log('Blob URL作成:', url);
         
         // ダウンロードリンクを作成
         const link = document.createElement('a');
+        link.href = url;
         link.download = `calendar_${format(currentDate, 'yyyy-MM')}.png`;
-        link.href = dataURL;
+        link.style.display = 'none';
         
-        // リンクをクリックしてダウンロード実行
-        console.log('ダウンロード実行中...');
+        // ドキュメントに追加してクリック
+        document.body.appendChild(link);
+        console.log('ダウンロードリンククリック実行...');
+        link.click();
         
-        // より確実なダウンロード方法を試行
-        if (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')) {
-          // Safari用の処理
-          const newWindow = window.open();
-          if (newWindow) {
-            newWindow.document.write(`<img src="${dataURL}" />`);
-            newWindow.document.title = `calendar_${format(currentDate, 'yyyy-MM')}.png`;
-          }
-        } else {
-          // その他のブラウザ用の処理
-          document.body.appendChild(link);
-          
-          // クリックイベントを強制的に発火
-          const clickEvent = new MouseEvent('click', {
-            view: window,
-            bubbles: true,
-            cancelable: false
-          });
-          link.dispatchEvent(clickEvent);
-          
-          // 少し待ってからリンクを削除
-          setTimeout(() => {
-            if (document.body.contains(link)) {
-              document.body.removeChild(link);
-            }
-          }, 100);
-        }
+        // クリーンアップ
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          console.log('クリーンアップ完了');
+        }, 100);
         
-        console.log('ダウンロード完了');
         toast({
           title: "成功",
           description: "カレンダー画像をダウンロードしました",
         });
-      } catch (downloadError) {
-        console.error('ダウンロードエラー:', downloadError);
-        throw downloadError;
-      }
+      }, 'image/png', 1.0);
     } catch (error) {
       console.error('画像生成エラー:', error);
       const errorMessage = error instanceof Error ? error.message : '不明なエラー';
