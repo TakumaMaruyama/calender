@@ -179,25 +179,44 @@ export function CalendarGrid({
                     return (
                       <div
                         key={session.id}
-                        className={`${colorClass} text-white px-2 py-1 rounded cursor-pointer hover:opacity-80 group relative w-full`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // 削除ダイアログを表示するためのイベントを発行
-                          window.dispatchEvent(new CustomEvent('showDeleteDialog', { detail: session }));
-                        }}
+                        className={`${colorClass} text-white rounded relative w-full flex items-center`}
                         title={displayText} // ツールチップで全文表示
                       >
                         <div 
-                          className="pr-6 text-xs font-medium leading-tight export-full-text"
+                          className="flex-1 px-2 py-1 text-xs font-medium leading-tight export-full-text cursor-pointer"
                           style={{
                             wordBreak: 'break-all',
                             lineHeight: '1.2'
                           }}
                           data-full-text={displayText}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // メニュー編集機能があれば、ここで編集ダイアログを開く
+                          }}
                         >
                           {displayText.length > 8 ? `${displayText.substring(0, 8)}...` : displayText}
                         </div>
-                        <span className="opacity-70 group-hover:opacity-100 absolute right-1 top-1/2 transform -translate-y-1/2 text-xs font-bold">×</span>
+                        <button 
+                          className="w-6 h-full bg-red-500 hover:bg-red-600 text-white text-xs font-bold flex items-center justify-center rounded-r border-none cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            window.dispatchEvent(new CustomEvent('showDeleteDialog', { detail: session }));
+                          }}
+                          onTouchStart={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onTouchEnd={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            window.dispatchEvent(new CustomEvent('showDeleteDialog', { detail: session }));
+                          }}
+                          type="button"
+                          aria-label="削除"
+                        >
+                          ×
+                        </button>
                       </div>
                     );
                   })}
