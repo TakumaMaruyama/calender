@@ -96,12 +96,30 @@ export default function Calendar() {
     if (!calendarRef.current) return;
 
     try {
-      const canvas = await html2canvas(calendarRef.current, {
+      // 画像保存用に一時的にスタイルを調整
+      const calendarElement = calendarRef.current;
+      const originalOverflow = calendarElement.style.overflow;
+      
+      // エクスポート用クラスを追加
+      calendarElement.classList.add('calendar-export');
+      calendarElement.style.overflow = 'visible';
+
+      const canvas = await html2canvas(calendarElement, {
         backgroundColor: '#ffffff',
         scale: 2,
         logging: false,
         useCORS: true,
+        width: 800, // 最小幅を確保
+        height: calendarElement.scrollHeight,
+        scrollX: 0,
+        scrollY: 0,
+        allowTaint: true,
+        foreignObjectRendering: true,
       });
+
+      // スタイルを元に戻す
+      calendarElement.classList.remove('calendar-export');
+      calendarElement.style.overflow = originalOverflow;
 
       // 画像をダウンロード
       const link = document.createElement('a');
@@ -114,6 +132,7 @@ export default function Calendar() {
         description: "カレンダー画像をダウンロードしました",
       });
     } catch (error) {
+      console.error('画像生成エラー:', error);
       toast({
         title: "エラー",
         description: "画像の生成に失敗しました",

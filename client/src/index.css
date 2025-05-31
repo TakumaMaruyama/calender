@@ -42,6 +42,30 @@
   --lane: 45 100% 50%; /* #FFB300 */
 }
 
+/* 画像エクスポート時の文字表示改善 */
+@media print, screen {
+  .export-full-text::before {
+    content: attr(data-full-text);
+    display: none;
+  }
+  
+  /* html2canvas実行時に完全なテキストを表示 */
+  .calendar-export .export-full-text {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  
+  .calendar-export .export-full-text::before {
+    content: attr(data-full-text);
+    display: inline;
+  }
+  
+  .calendar-export .export-full-text > * {
+    display: none;
+  }
+}
+
 .dark {
   --background: 215 28% 17%;
   --foreground: 210 40% 98%;

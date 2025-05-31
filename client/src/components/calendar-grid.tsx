@@ -120,99 +120,102 @@ export function CalendarGrid({
   }
 
   return (
-    <Card className="bg-white rounded-xl shadow-sm border border-ocean-100 overflow-hidden">
-      {/* Calendar Header */}
-      <div className="grid grid-cols-7 bg-ocean-50 border-b border-ocean-100">
-        {['日', '月', '火', '水', '木', '金', '土'].map((day) => (
-          <div key={day} className="p-4 text-center text-sm font-semibold text-ocean-700">
-            {day}
-          </div>
-        ))}
-      </div>
-      
-      {/* Calendar Body */}
-      <div className="grid grid-cols-7">
-        {calendarDays.map((day, index) => {
-          const sessions = getSessionsForDate(day.dateString);
-          
-          return (
-            <div
-              key={index}
-              onTouchStart={(e) => handleTouchStart(day.dateString, e)}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={(e) => handleTouchEnd(day.dateString, e)}
-              onTouchCancel={handleTouchCancel}
-              onClick={(e) => handleClick(day.dateString, e)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                if (onLeaderSet) {
-                  onLeaderSet(day.dateString);
-                }
-              }}
-              className={`
-                relative h-20 sm:h-24 lg:h-32 p-1 sm:p-2 border-r border-b border-ocean-100 cursor-pointer transition-colors
-                ${!day.isCurrentMonth ? 'bg-gray-50' : 'hover:bg-ocean-50'}
-                ${day.isToday ? 'bg-pool-50 border-l-2 sm:border-l-4 border-l-pool-500' : ''}
-                select-none
-              `}
-            >
-              <div className={`text-xs sm:text-sm font-medium mb-1 ${
-                day.isToday 
-                  ? 'text-pool-600 font-bold' 
-                  : day.isCurrentMonth 
-                    ? 'text-ocean-900' 
-                    : 'text-gray-400'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <span>{format(day.date, 'd')}</span>
-                  <LeaderName date={day.dateString} />
+    <div className="w-full overflow-x-auto">
+      <Card className="bg-white rounded-xl shadow-sm border border-ocean-100 overflow-hidden min-w-[800px]">
+        {/* Calendar Header */}
+        <div className="grid grid-cols-7 bg-ocean-50 border-b border-ocean-100">
+          {['日', '月', '火', '水', '木', '金', '土'].map((day) => (
+            <div key={day} className="p-4 text-center text-sm font-semibold text-ocean-700 min-w-[114px]">
+              {day}
+            </div>
+          ))}
+        </div>
+        
+        {/* Calendar Body */}
+        <div className="grid grid-cols-7">
+          {calendarDays.map((day, index) => {
+            const sessions = getSessionsForDate(day.dateString);
+            
+            return (
+              <div
+                key={index}
+                onTouchStart={(e) => handleTouchStart(day.dateString, e)}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={(e) => handleTouchEnd(day.dateString, e)}
+                onTouchCancel={handleTouchCancel}
+                onClick={(e) => handleClick(day.dateString, e)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  if (onLeaderSet) {
+                    onLeaderSet(day.dateString);
+                  }
+                }}
+                className={`
+                  relative h-24 lg:h-32 p-2 border-r border-b border-ocean-100 cursor-pointer transition-colors min-w-[114px]
+                  ${!day.isCurrentMonth ? 'bg-gray-50' : 'hover:bg-ocean-50'}
+                  ${day.isToday ? 'bg-pool-50 border-l-2 sm:border-l-4 border-l-pool-500' : ''}
+                  select-none
+                `}
+              >
+                <div className={`text-sm font-medium mb-1 ${
+                  day.isToday 
+                    ? 'text-pool-600 font-bold' 
+                    : day.isCurrentMonth 
+                      ? 'text-ocean-900' 
+                      : 'text-gray-400'
+                }`}>
+                  <div className="flex items-center justify-between">
+                    <span>{format(day.date, 'd')}</span>
+                    <LeaderName date={day.dateString} />
+                  </div>
+                </div>
+                
+                <div className="space-y-1 w-full">
+                  {sessions.slice(0, 3).map((session) => {
+                    // titleまたはtypeどちらかを表示
+                    const displayText = session.title || getTrainingTypeLabel(session.type || '');
+                    const colorClass = session.type ? getTrainingTypeColor(session.type) : 'bg-gray-500';
+                    
+                    return (
+                      <div
+                        key={session.id}
+                        className={`${colorClass} text-white px-2 py-1 rounded cursor-pointer hover:opacity-80 group relative w-full`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // 削除確認を表示
+                          if (window.confirm(`「${displayText}」を削除しますか？`)) {
+                            // 削除処理をここに追加
+                            window.dispatchEvent(new CustomEvent('deleteTraining', { detail: session.id }));
+                          }
+                        }}
+                        title={displayText} // ツールチップで全文表示
+                      >
+                        <div 
+                          className="pr-6 text-xs font-medium leading-tight export-full-text"
+                          style={{
+                            wordBreak: 'break-all',
+                            lineHeight: '1.2'
+                          }}
+                          data-full-text={displayText}
+                        >
+                          {displayText.length > 8 ? `${displayText.substring(0, 8)}...` : displayText}
+                        </div>
+                        <span className="opacity-70 group-hover:opacity-100 absolute right-1 top-1/2 transform -translate-y-1/2 text-xs font-bold">×</span>
+                      </div>
+                    );
+                  })}
+                  {sessions.length > 3 && (
+                    <div className="text-xs text-ocean-600 px-2">
+                      +{sessions.length - 3} 他
+                    </div>
+                  )}
                 </div>
               </div>
-              
-              <div className="space-y-0.5 sm:space-y-1 w-full">
-                {sessions.slice(0, 2).map((session) => {
-                  // titleまたはtypeどちらかを表示
-                  const displayText = session.title || getTrainingTypeLabel(session.type || '');
-                  const colorClass = session.type ? getTrainingTypeColor(session.type) : 'bg-gray-500';
-                  
-                  return (
-                    <div
-                      key={session.id}
-                      className={`${colorClass} text-white px-1.5 sm:px-2 py-1 rounded cursor-pointer hover:opacity-80 group relative w-full overflow-hidden`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // 削除確認を表示
-                        if (window.confirm(`「${displayText}」を削除しますか？`)) {
-                          // 削除処理をここに追加
-                          window.dispatchEvent(new CustomEvent('deleteTraining', { detail: session.id }));
-                        }
-                      }}
-                      title={displayText} // ツールチップで全文表示
-                    >
-                      <div 
-                        className="pr-5 sm:pr-6 text-xs sm:text-sm whitespace-nowrap overflow-x-auto scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent"
-                        style={{
-                          scrollbarWidth: 'thin',
-                          WebkitOverflowScrolling: 'touch'
-                        }}
-                      >
-                        {displayText}
-                      </div>
-                      <span className="opacity-70 group-hover:opacity-100 absolute right-1 top-1/2 transform -translate-y-1/2 text-xs font-bold">×</span>
-                    </div>
-                  );
-                })}
-                {sessions.length > 2 && (
-                  <div className="text-xs text-ocean-600 px-1 sm:px-2">
-                    +{sessions.length - 2} 他
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </Card>
+            );
+          })}
+        </div>
+      </Card>
+    </div>
   );
 }
 
