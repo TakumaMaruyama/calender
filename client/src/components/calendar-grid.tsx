@@ -222,15 +222,10 @@ export function CalendarGrid({
 // リーダー名表示コンポーネント（APIからリーダー情報を取得）
 function LeaderName({ date }: { date: string }) {
   const [leader, setLeader] = useState<string | null>(null);
-  const targetDate = new Date(date);
-  const dayOfWeek = targetDate.getDay();
-  
-  // 月曜日(1)と金曜日(5)のみ表示
-  if (dayOfWeek !== 1 && dayOfWeek !== 5) {
-    return null;
-  }
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    setIsLoading(true);
     // APIからその日のリーダー情報を取得
     fetch(`/api/leader/${date}`)
       .then(res => {
@@ -242,20 +237,30 @@ function LeaderName({ date }: { date: string }) {
       .then(data => {
         if (data && data.name) {
           setLeader(data.name);
+        } else {
+          setLeader(null);
         }
       })
       .catch(err => {
         console.error('リーダー情報取得エラー:', err);
+        setLeader(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   }, [date]);
+
+  if (isLoading) {
+    return null;
+  }
 
   if (!leader) {
     return null;
   }
 
   return (
-    <span className="text-xs text-pool-600 font-medium bg-pool-100 px-1 rounded">
-      {leader}
+    <span className="text-xs text-pool-600 font-medium bg-pool-100 px-1 rounded whitespace-nowrap">
+      L:{leader}
     </span>
   );
 }

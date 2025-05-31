@@ -427,18 +427,18 @@ export class MemStorage implements IStorage {
           { id: 2, name: "有理", order: 2 },
           { id: 3, name: "龍之介", order: 3 },
           { id: 4, name: "彩音", order: 4 },
-          { id: 1748413969681, name: "勘太", order: 5 },
-          { id: 1748413977705, name: "悠喜", order: 6 },
-          { id: 1748413989715, name: "佳翔", order: 7 },
-          { id: 1748414023533, name: "春舞", order: 8 },
-          { id: 1748414026842, name: "滉介", order: 9 },
-          { id: 1748414030535, name: "元翔", order: 10 },
-          { id: 1748414039656, name: "百華", order: 11 },
-          { id: 1748414046732, name: "澪心", order: 12 },
-          { id: 1748414051436, name: "礼志", order: 13 },
-          { id: 1748414054499, name: "桔伊", order: 14 },
-          { id: 1748414058644, name: "虹日", order: 15 },
-          { id: 1748414073820, name: "弥広", order: 16 }
+          { id: 5, name: "勘太", order: 5 },
+          { id: 6, name: "悠喜", order: 6 },
+          { id: 7, name: "佳翔", order: 7 },
+          { id: 8, name: "春舞", order: 8 },
+          { id: 9, name: "滉介", order: 9 },
+          { id: 10, name: "元翔", order: 10 },
+          { id: 11, name: "百華", order: 11 },
+          { id: 12, name: "澪心", order: 12 },
+          { id: 13, name: "礼志", order: 13 },
+          { id: 14, name: "桔伊", order: 14 },
+          { id: 15, name: "虹日", order: 15 },
+          { id: 16, name: "弥広", order: 16 }
         ];
         
         const leader = defaultLeaders.find(l => l.id === schedule.swimmerId);
