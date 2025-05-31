@@ -11,6 +11,7 @@ import { LeaderDateModal } from "@/components/leader-date-modal";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { generateCalendarDays, getTrainingTypeLabel } from "@/lib/utils";
 import html2canvas from "html2canvas";
 import type { TrainingSession } from "@shared/schema";
 
@@ -97,15 +98,25 @@ export default function Calendar() {
       console.log('カスタム画像エクスポート開始...');
       
       // カレンダーデータを取得
+      console.log('カレンダーデータ取得中...');
       const calendarDays = generateCalendarDays(currentDate);
+      console.log('カレンダー日数:', calendarDays.length);
+      
       const monthName = format(currentDate, 'yyyy年MM月');
+      console.log('月名:', monthName);
+      
+      // トレーニングセッションのデータチェック
+      console.log('トレーニングセッション数:', trainingSessions?.length || 0);
+      console.log('最初のセッション:', trainingSessions?.[0]);
       
       // キャンバスを作成
+      console.log('キャンバス作成中...');
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) {
         throw new Error('キャンバスコンテキストの取得に失敗しました');
       }
+      console.log('キャンバス作成完了');
 
       // キャンバスのサイズを設定（横長にして文字が見やすくする）
       canvas.width = 1200;
@@ -236,9 +247,11 @@ export default function Calendar() {
       });
     } catch (error) {
       console.error('画像生成エラー:', error);
+      const errorMessage = error instanceof Error ? error.message : '不明なエラー';
+      console.error('エラーメッセージ:', errorMessage);
       toast({
         title: "エラー",
-        description: "画像の生成に失敗しました",
+        description: `画像の生成に失敗しました: ${errorMessage}`,
         variant: "destructive",
       });
     }
