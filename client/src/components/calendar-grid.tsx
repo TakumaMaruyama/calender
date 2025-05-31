@@ -223,6 +223,13 @@ export function CalendarGrid({
 function LeaderName({ date }: { date: string }) {
   const [leader, setLeader] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const targetDate = new Date(date);
+  const dayOfWeek = targetDate.getDay();
+  
+  // 月曜日(1)と金曜日(5)のみ表示
+  if (dayOfWeek !== 1 && dayOfWeek !== 5) {
+    return null;
+  }
 
   useEffect(() => {
     setIsLoading(true);
@@ -260,7 +267,7 @@ function LeaderName({ date }: { date: string }) {
 
   return (
     <span className="text-xs text-pool-600 font-medium bg-pool-100 px-1 rounded whitespace-nowrap">
-      L:{leader}
+      {leader}
     </span>
   );
 }

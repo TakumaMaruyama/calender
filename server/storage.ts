@@ -177,6 +177,66 @@ export class MemStorage implements IStorage {
       recurringPattern: null,
       recurringEndDate: null
     });
+
+    // リーダースケジュールを初期化（6月2日から元翔でスタート）
+    await this.initializeLeaderSchedule();
+  }
+
+  private async initializeLeaderSchedule() {
+    // 既存のリーダースケジュールをクリア
+    this.leaderSchedules.clear();
+    this.currentLeaderScheduleId = 1;
+
+    // リーダーリスト（元翔をID:10に設定）
+    const leaders = [
+      { id: 1, name: "ののか", order: 1 },
+      { id: 2, name: "有理", order: 2 },
+      { id: 3, name: "龍之介", order: 3 },
+      { id: 4, name: "彩音", order: 4 },
+      { id: 5, name: "勘太", order: 5 },
+      { id: 6, name: "悠喜", order: 6 },
+      { id: 7, name: "佳翔", order: 7 },
+      { id: 8, name: "春舞", order: 8 },
+      { id: 9, name: "滉介", order: 9 },
+      { id: 10, name: "元翔", order: 10 },
+      { id: 11, name: "百華", order: 11 },
+      { id: 12, name: "澪心", order: 12 },
+      { id: 13, name: "礼志", order: 13 },
+      { id: 14, name: "桔伊", order: 14 },
+      { id: 15, name: "虹日", order: 15 },
+      { id: 16, name: "弥広", order: 16 }
+    ];
+
+    // 6月2日（月曜日）から元翔（ID:10）でスタート
+    const startDate = new Date('2025-06-02');
+    let currentDate = new Date(startDate);
+    const endOfYear = new Date(startDate);
+    endOfYear.setFullYear(endOfYear.getFullYear() + 1);
+
+    // 元翔から始めるためのインデックス設定
+    const startLeaderIndex = leaders.findIndex(l => l.id === 10); // 元翔のインデックス
+    let currentLeaderIndex = startLeaderIndex;
+
+    while (currentDate < endOfYear) {
+      const leader = leaders[currentLeaderIndex % leaders.length];
+      
+      // 3日間のスケジュールを作成
+      const scheduleEndDate = new Date(currentDate);
+      scheduleEndDate.setDate(scheduleEndDate.getDate() + 2); // 3日間（開始日含む）
+
+      await this.createLeaderSchedule({
+        swimmerId: leader.id,
+        startDate: currentDate.toISOString().split('T')[0],
+        endDate: scheduleEndDate.toISOString().split('T')[0],
+        isActive: true
+      });
+
+      // 次のリーダーへ
+      currentLeaderIndex = (currentLeaderIndex + 1) % leaders.length;
+
+      // 次の3日間期間へ移動
+      currentDate.setDate(currentDate.getDate() + 3);
+    }
   }
 
   // Swimmers
