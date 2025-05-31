@@ -93,49 +93,136 @@ export default function Calendar() {
   };
 
   const handleExportImage = async () => {
-    if (!calendarRef.current) {
-      toast({
-        title: "エラー",
-        description: "カレンダーが見つかりませんでした",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
-      console.log('画像エクスポート開始...');
+      console.log('カスタム画像エクスポート開始...');
       
-      // 画像保存用に一時的にスタイルを調整
-      const calendarElement = calendarRef.current;
-      console.log('カレンダー要素:', calendarElement);
+      // カレンダーデータを取得
+      const calendarDays = generateCalendarDays(currentDate);
+      const monthName = format(currentDate, 'yyyy年MM月');
       
-      const originalOverflow = calendarElement.style.overflow;
-      
-      // エクスポート用クラスを追加
-      calendarElement.classList.add('calendar-export');
-      calendarElement.style.overflow = 'visible';
+      // キャンバスを作成
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('キャンバスコンテキストの取得に失敗しました');
+      }
 
-      console.log('html2canvas実行中...');
-      const canvas = await html2canvas(calendarElement, {
-        backgroundColor: '#ffffff',
-        scale: 1.5,
-        logging: true,
-        useCORS: true,
-        allowTaint: true,
-        foreignObjectRendering: false,
-        removeContainer: true,
+      // キャンバスのサイズを設定（横長にして文字が見やすくする）
+      canvas.width = 1200;
+      canvas.height = 800;
+
+      // 背景色を設定
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // フォント設定
+      ctx.font = '16px Arial, sans-serif';
+      ctx.textAlign = 'center';
+
+      // タイトルを描画
+      ctx.fillStyle = '#1E293B';
+      ctx.font = 'bold 24px Arial, sans-serif';
+      ctx.fillText(monthName, canvas.width / 2, 40);
+
+      // 曜日ヘッダーを描画
+      const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
+      const cellWidth = canvas.width / 7;
+      const cellHeight = 100;
+      const startY = 80;
+
+      ctx.font = 'bold 14px Arial, sans-serif';
+      ctx.fillStyle = '#64748B';
+      
+      dayNames.forEach((day, index) => {
+        const x = index * cellWidth + cellWidth / 2;
+        ctx.fillText(day, x, startY);
       });
 
-      console.log('キャンバス生成完了:', canvas);
+      // カレンダーの日付とセッションを描画
+      ctx.font = '12px Arial, sans-serif';
+      
+      for (let week = 0; week < 6; week++) {
+        for (let day = 0; day < 7; day++) {
+          const dayIndex = week * 7 + day;
+          if (dayIndex >= calendarDays.length) break;
 
-      // スタイルを元に戻す
-      calendarElement.classList.remove('calendar-export');
-      calendarElement.style.overflow = originalOverflow;
+          const calendarDay = calendarDays[dayIndex];
+          const x = day * cellWidth;
+          const y = startY + 20 + week * cellHeight;
+
+          // セルの境界線を描画
+          ctx.strokeStyle = '#E2E8F0';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(x, y, cellWidth, cellHeight);
+
+          // 日付を描画
+          ctx.fillStyle = calendarDay.isCurrentMonth ? '#1E293B' : '#94A3B8';
+          ctx.font = 'bold 14px Arial, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(format(calendarDay.date, 'd'), x + 8, y + 20);
+
+          // その日のセッションを取得
+          const sessions = trainingSessions.filter(session => session.date === calendarDay.dateString);
+          
+          // セッションを描画（最大3つまで）
+          sessions.slice(0, 3).forEach((session, sessionIndex) => {
+            const sessionY = y + 40 + sessionIndex * 20;
+            const displayText = session.title || (session.type ? getTrainingTypeLabel(session.type) : '');
+            
+            // セッションの背景色を設定
+            let bgColor = '#6B7280';
+            if (session.type) {
+              switch (session.type) {
+                case 'endurance': bgColor = '#3B82F6'; break;
+                case 'speed': bgColor = '#EF4444'; break;
+                case 'technique': bgColor = '#10B981'; break;
+                case 'recovery': bgColor = '#8B5CF6'; break;
+                default: bgColor = '#6B7280';
+              }
+            }
+
+            // セッションボックスを描画
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(x + 4, sessionY - 12, cellWidth - 8, 16);
+
+            // セッションテキストを描画（文字数制限なしで完全表示）
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '10px Arial, sans-serif';
+            ctx.textAlign = 'left';
+            
+            // テキストがセル幅を超える場合は折り返し
+            const maxWidth = cellWidth - 12;
+            if (ctx.measureText(displayText).width > maxWidth) {
+              const words = displayText.split('');
+              let line = '';
+              let testLine = '';
+              
+              for (let n = 0; n < words.length; n++) {
+                testLine = line + words[n];
+                if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+                  ctx.fillText(line, x + 6, sessionY - 2);
+                  line = words[n];
+                } else {
+                  line = testLine;
+                }
+              }
+              ctx.fillText(line, x + 6, sessionY - 2);
+            } else {
+              ctx.fillText(displayText, x + 6, sessionY - 2);
+            }
+          });
+
+          // セッション数が3つを超える場合の表示
+          if (sessions.length > 3) {
+            ctx.fillStyle = '#64748B';
+            ctx.font = '10px Arial, sans-serif';
+            ctx.fillText(`+${sessions.length - 3} 他`, x + 6, y + cellHeight - 8);
+          }
+        }
+      }
 
       // 画像をダウンロード
       const dataURL = canvas.toDataURL('image/png');
-      console.log('データURL生成完了');
-      
       const link = document.createElement('a');
       link.download = `calendar_${format(currentDate, 'yyyy-MM')}.png`;
       link.href = dataURL;
@@ -148,10 +235,10 @@ export default function Calendar() {
         description: "カレンダー画像をダウンロードしました",
       });
     } catch (error) {
-      console.error('画像生成エラー詳細:', error);
+      console.error('画像生成エラー:', error);
       toast({
         title: "エラー",
-        description: `画像の生成に失敗しました: ${error.message}`,
+        description: "画像の生成に失敗しました",
         variant: "destructive",
       });
     }
