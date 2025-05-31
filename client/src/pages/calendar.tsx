@@ -436,66 +436,22 @@ export default function Calendar() {
           duration: 5000,
         });
       } else {
-        // ポップアップがブロックされた場合、現在のページに画像を表示
-        console.log('ポップアップがブロックされました。インライン表示を使用...');
+        // ポップアップがブロックされた場合のシンプルな表示
+        console.log('ポップアップがブロックされました。シンプル表示を使用...');
         
-        // モーダルまたはオーバーレイとして画像を表示
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          background: rgba(0,0,0,0.8);
-          z-index: 10000;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          box-sizing: border-box;
-        `;
+        // 直接ダウンロードを試行
+        const link = document.createElement('a');
+        link.href = dataURL;
+        link.download = `calendar_${format(currentDate, 'yyyy-MM')}.png`;
+        link.style.display = 'none';
         
-        const container = document.createElement('div');
-        container.style.cssText = `
-          background: white;
-          border-radius: 12px;
-          padding: 20px;
-          max-width: 90%;
-          max-height: 90%;
-          overflow: auto;
-          text-align: center;
-        `;
-        
-        container.innerHTML = `
-          <h2 style="margin-top: 0;">カレンダー画像 - ${format(currentDate, 'yyyy年MM月')}</h2>
-          <img src="${dataURL}" style="max-width: 100%; height: auto; margin: 10px 0;" alt="カレンダー画像" />
-          <div style="margin: 15px 0;">
-            <a href="${dataURL}" download="calendar_${format(currentDate, 'yyyy-MM')}.png" 
-               style="display: inline-block; padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin-right: 10px;">
-              📥 画像をダウンロード
-            </a>
-            <button onclick="this.parentElement.parentElement.parentElement.remove()" 
-                    style="padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">
-              ✕ 閉じる
-            </button>
-          </div>
-          <p style="color: #666; font-size: 14px;">画像を右クリックして「名前を付けて画像を保存」でも保存できます</p>
-        `;
-        
-        overlay.appendChild(container);
-        document.body.appendChild(overlay);
-        
-        // オーバーレイをクリックしたら閉じる
-        overlay.addEventListener('click', (e) => {
-          if (e.target === overlay) {
-            overlay.remove();
-          }
-        });
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
         
         toast({
-          title: "画像を表示",
-          description: "画像をクリックして右クリックメニューから保存するか、ダウンロードボタンを使用してください。",
+          title: "ダウンロード開始",
+          description: "画像のダウンロードを開始しました。ダウンロードフォルダを確認してください。",
           duration: 5000,
         });
       }
