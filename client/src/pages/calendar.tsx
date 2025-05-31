@@ -251,29 +251,254 @@ export default function Calendar() {
       
       console.log('データURL生成成功、長さ:', dataURL.length);
       
-      // ダウンロードリンクを作成
-      const link = document.createElement('a');
-      link.href = dataURL;
-      link.download = `calendar_${format(currentDate, 'yyyy-MM')}.png`;
+      // データURLをコピー用の形式に変換
+      const imageData = dataURL.split(',')[1]; // data:image/png;base64, を除去
       
-      // ユーザーアクションによるダウンロードを確実に実行
-      console.log('ダウンロード実行中...');
-      
-      // マウスイベントを模擬してクリック
-      const event = new MouseEvent('click', {
-        view: window,
-        bubbles: true,
-        cancelable: true,
-      });
-      
-      link.dispatchEvent(event);
-      
-      console.log('ダウンロード完了');
-      
-      toast({
-        title: "成功",
-        description: "カレンダー画像をダウンロードしました",
-      });
+      // 画像を新しいウィンドウで表示
+      const newWindow = window.open('', '_blank');
+      if (newWindow) {
+        newWindow.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8">
+              <title>カレンダー画像 - ${format(currentDate, 'yyyy年MM月')}</title>
+              <style>
+                body { 
+                  margin: 0; 
+                  padding: 20px; 
+                  font-family: 'Helvetica Neue', Arial, sans-serif; 
+                  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                  min-height: 100vh;
+                  display: flex; 
+                  flex-direction: column; 
+                  align-items: center; 
+                  justify-content: center;
+                }
+                .container {
+                  background: white;
+                  border-radius: 12px;
+                  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                  padding: 30px;
+                  max-width: 90%;
+                  text-align: center;
+                }
+                h1 { 
+                  color: #333; 
+                  margin-bottom: 20px; 
+                  font-size: 28px;
+                  font-weight: 300;
+                }
+                .image-container {
+                  margin: 20px 0;
+                  border-radius: 8px;
+                  overflow: hidden;
+                  box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+                }
+                img { 
+                  max-width: 100%; 
+                  height: auto; 
+                  display: block;
+                }
+                .buttons {
+                  display: flex;
+                  gap: 15px;
+                  justify-content: center;
+                  flex-wrap: wrap;
+                  margin-top: 25px;
+                }
+                .btn {
+                  padding: 12px 24px;
+                  border: none;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  text-decoration: none;
+                  display: inline-block;
+                  font-size: 14px;
+                  font-weight: 500;
+                  transition: all 0.2s ease;
+                  min-width: 120px;
+                }
+                .btn-primary {
+                  background: #4CAF50;
+                  color: white;
+                }
+                .btn-primary:hover {
+                  background: #45a049;
+                  transform: translateY(-1px);
+                }
+                .btn-secondary {
+                  background: #2196F3;
+                  color: white;
+                }
+                .btn-secondary:hover {
+                  background: #1976D2;
+                  transform: translateY(-1px);
+                }
+                .instructions {
+                  margin-top: 20px;
+                  color: #666;
+                  line-height: 1.6;
+                  max-width: 500px;
+                  font-size: 14px;
+                }
+                .copy-section {
+                  margin-top: 20px;
+                  padding: 15px;
+                  background: #f8f9fa;
+                  border-radius: 6px;
+                  border-left: 4px solid #2196F3;
+                }
+                .copy-text {
+                  font-family: monospace;
+                  font-size: 12px;
+                  color: #666;
+                  margin: 10px 0;
+                  word-break: break-all;
+                  max-height: 100px;
+                  overflow-y: auto;
+                  padding: 8px;
+                  background: white;
+                  border: 1px solid #ddd;
+                  border-radius: 4px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>🏊‍♀️ スイミングカレンダー</h1>
+                <h2>${format(currentDate, 'yyyy年MM月')}</h2>
+                
+                <div class="image-container">
+                  <img src="${dataURL}" alt="カレンダー画像" id="calendarImage" />
+                </div>
+                
+                <div class="buttons">
+                  <a href="${dataURL}" download="calendar_${format(currentDate, 'yyyy-MM')}.png" class="btn btn-primary" onclick="handleDownload()">
+                    📥 画像をダウンロード
+                  </a>
+                  <button class="btn btn-secondary" onclick="copyImageData()">
+                    📋 画像データをコピー
+                  </button>
+                </div>
+                
+                <div class="instructions">
+                  <p><strong>保存方法：</strong></p>
+                  <p>1. 「画像をダウンロード」ボタンをクリック</p>
+                  <p>2. または画像を右クリック → 「名前を付けて画像を保存」</p>
+                  <p>3. 「画像データをコピー」でBase64データをコピーして他のアプリで使用</p>
+                </div>
+                
+                <div class="copy-section">
+                  <p><strong>画像データ（Base64）:</strong></p>
+                  <div class="copy-text" id="imageDataText">${imageData.substring(0, 100)}...</div>
+                  <small>クリックして全文をコピー</small>
+                </div>
+              </div>
+              
+              <script>
+                function handleDownload() {
+                  console.log('ダウンロードボタンがクリックされました');
+                  // ボタンクリック時に追加の処理があれば記述
+                }
+                
+                function copyImageData() {
+                  const fullData = '${imageData}';
+                  navigator.clipboard.writeText(fullData).then(function() {
+                    alert('画像データをクリップボードにコピーしました！');
+                  }).catch(function() {
+                    // フォールバック: テキストエリアを使用
+                    const textarea = document.createElement('textarea');
+                    textarea.value = fullData;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    alert('画像データをクリップボードにコピーしました！');
+                  });
+                }
+                
+                // データテキストをクリックした時の処理
+                document.getElementById('imageDataText').onclick = function() {
+                  copyImageData();
+                };
+              </script>
+            </body>
+          </html>
+        `);
+        newWindow.document.close();
+        
+        console.log('新しいタブで画像を開きました');
+        
+        toast({
+          title: "成功",
+          description: "新しいタブで画像を開きました。ダウンロードボタンまたは右クリックで保存してください。",
+          duration: 5000,
+        });
+      } else {
+        // ポップアップがブロックされた場合、現在のページに画像を表示
+        console.log('ポップアップがブロックされました。インライン表示を使用...');
+        
+        // モーダルまたはオーバーレイとして画像を表示
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.8);
+          z-index: 10000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          box-sizing: border-box;
+        `;
+        
+        const container = document.createElement('div');
+        container.style.cssText = `
+          background: white;
+          border-radius: 12px;
+          padding: 20px;
+          max-width: 90%;
+          max-height: 90%;
+          overflow: auto;
+          text-align: center;
+        `;
+        
+        container.innerHTML = `
+          <h2 style="margin-top: 0;">カレンダー画像 - ${format(currentDate, 'yyyy年MM月')}</h2>
+          <img src="${dataURL}" style="max-width: 100%; height: auto; margin: 10px 0;" alt="カレンダー画像" />
+          <div style="margin: 15px 0;">
+            <a href="${dataURL}" download="calendar_${format(currentDate, 'yyyy-MM')}.png" 
+               style="display: inline-block; padding: 10px 20px; background: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin-right: 10px;">
+              📥 画像をダウンロード
+            </a>
+            <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                    style="padding: 10px 20px; background: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">
+              ✕ 閉じる
+            </button>
+          </div>
+          <p style="color: #666; font-size: 14px;">画像を右クリックして「名前を付けて画像を保存」でも保存できます</p>
+        `;
+        
+        overlay.appendChild(container);
+        document.body.appendChild(overlay);
+        
+        // オーバーレイをクリックしたら閉じる
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) {
+            overlay.remove();
+          }
+        });
+        
+        toast({
+          title: "画像を表示",
+          description: "画像をクリックして右クリックメニューから保存するか、ダウンロードボタンを使用してください。",
+          duration: 5000,
+        });
+      }
     } catch (error) {
       console.error('画像生成エラー:', error);
       const errorMessage = error instanceof Error ? error.message : '不明なエラー';
