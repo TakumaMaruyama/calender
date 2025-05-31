@@ -16,7 +16,9 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLeaderModalOpen, setIsLeaderModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedSession, setSelectedSession] = useState<TrainingSession | null>(null);
   const { toast } = useToast();
 
   const { data: trainingSessions, isLoading } = useQuery({
@@ -31,19 +33,18 @@ export default function Calendar() {
   });
 
   useEffect(() => {
-    const handleDeleteTraining = (event: CustomEvent) => {
-      toast({
-        title: "削除完了",
-        description: "トレーニングセッションを削除しました",
-      });
+    const handleShowDeleteDialog = (event: CustomEvent) => {
+      const session = event.detail as TrainingSession;
+      setSelectedSession(session);
+      setIsDeleteModalOpen(true);
     };
 
-    window.addEventListener('trainingDeleted', handleDeleteTraining as EventListener);
+    window.addEventListener('showDeleteDialog', handleShowDeleteDialog as EventListener);
     
     return () => {
-      window.removeEventListener('trainingDeleted', handleDeleteTraining as EventListener);
+      window.removeEventListener('showDeleteDialog', handleShowDeleteDialog as EventListener);
     };
-  }, [toast]);
+  }, []);
 
   const handleDateClick = (dateString: string) => {
     setSelectedDate(dateString);
@@ -392,6 +393,17 @@ export default function Calendar() {
         isOpen={isLeaderModalOpen}
         onClose={() => setIsLeaderModalOpen(false)}
         selectedDate={selectedDate}
+      />
+
+      {/* Delete Training Modal */}
+      <DeleteTrainingModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        session={selectedSession}
+        onSuccess={() => {
+          // データを再取得
+          window.location.reload();
+        }}
       />
     </div>
   );
