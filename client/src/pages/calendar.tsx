@@ -93,49 +93,65 @@ export default function Calendar() {
   };
 
   const handleExportImage = async () => {
-    if (!calendarRef.current) return;
+    if (!calendarRef.current) {
+      toast({
+        title: "エラー",
+        description: "カレンダーが見つかりませんでした",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
+      console.log('画像エクスポート開始...');
+      
       // 画像保存用に一時的にスタイルを調整
       const calendarElement = calendarRef.current;
+      console.log('カレンダー要素:', calendarElement);
+      
       const originalOverflow = calendarElement.style.overflow;
       
       // エクスポート用クラスを追加
       calendarElement.classList.add('calendar-export');
       calendarElement.style.overflow = 'visible';
 
+      console.log('html2canvas実行中...');
       const canvas = await html2canvas(calendarElement, {
         backgroundColor: '#ffffff',
-        scale: 2,
-        logging: false,
+        scale: 1.5,
+        logging: true,
         useCORS: true,
-        width: 800, // 最小幅を確保
-        height: calendarElement.scrollHeight,
-        scrollX: 0,
-        scrollY: 0,
         allowTaint: true,
-        foreignObjectRendering: true,
+        foreignObjectRendering: false,
+        removeContainer: true,
       });
+
+      console.log('キャンバス生成完了:', canvas);
 
       // スタイルを元に戻す
       calendarElement.classList.remove('calendar-export');
       calendarElement.style.overflow = originalOverflow;
 
       // 画像をダウンロード
+      const dataURL = canvas.toDataURL('image/png');
+      console.log('データURL生成完了');
+      
       const link = document.createElement('a');
       link.download = `calendar_${format(currentDate, 'yyyy-MM')}.png`;
-      link.href = canvas.toDataURL();
+      link.href = dataURL;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
 
       toast({
         title: "成功",
         description: "カレンダー画像をダウンロードしました",
       });
     } catch (error) {
-      console.error('画像生成エラー:', error);
+      console.error('画像生成エラー詳細:', error);
       toast({
         title: "エラー",
-        description: "画像の生成に失敗しました",
+        description: `画像の生成に失敗しました: ${error.message}`,
         variant: "destructive",
       });
     }
