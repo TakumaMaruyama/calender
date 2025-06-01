@@ -70,11 +70,7 @@ export default function Calendar() {
       
       console.log('キャンバス作成中...');
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d', { 
-        alpha: true,
-        colorSpace: 'srgb',
-        willReadFrequently: false 
-      });
+      const ctx = canvas.getContext('2d');
       if (!ctx) {
         throw new Error('キャンバスコンテキストの取得に失敗しました');
       }
@@ -83,17 +79,15 @@ export default function Calendar() {
       canvas.width = 1600;
       canvas.height = 1200;
 
-      // カラー出力を確実にするため、RGBAで背景を設定
-      ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
+      // 背景を白で塗りつぶし
+      ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // カラー補間と画質設定
+      // 画質設定
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      
-      // カラーフィルターを明示的に設定
-      ctx.filter = 'saturate(1.2) contrast(1.1)';
+      if (ctx.imageSmoothingQuality) {
+        ctx.imageSmoothingQuality = 'high';
+      }
 
       // フォント設定
       ctx.font = '16px Arial, sans-serif';
@@ -149,37 +143,37 @@ export default function Calendar() {
             const sessionY = y + 60 + sessionIndex * 30;
             const displayText = session.title || (session.type ? getTrainingTypeLabel(session.type) : '');
             
-            // セッションの背景色を設定（RGB値で確実にカラー指定）
-            let bgColor = 'rgb(107, 114, 128)';
-            let textColor = 'rgb(255, 255, 255)';
+            // セッションの背景色を設定（16進数で確実にカラー指定）
+            let bgColor = '#6B7280';
             if (session.type) {
               switch (session.type) {
                 case 'endurance': 
-                  bgColor = 'rgb(29, 78, 216)'; // 青
+                  bgColor = '#1E40AF'; // 青
                   break;
                 case 'speed': 
-                  bgColor = 'rgb(220, 38, 38)'; // 赤
+                  bgColor = '#DC2626'; // 赤
                   break;
                 case 'technique': 
-                  bgColor = 'rgb(5, 150, 105)'; // 緑
+                  bgColor = '#059669'; // 緑
                   break;
                 case 'recovery': 
-                  bgColor = 'rgb(124, 58, 237)'; // 紫
+                  bgColor = '#7C3AED'; // 紫
                   break;
                 case 'competition':
-                  bgColor = 'rgb(234, 88, 12)'; // オレンジ
+                  bgColor = '#EA580C'; // オレンジ
                   break;
                 default: 
-                  bgColor = 'rgb(55, 65, 81)'; // ダークグレー
+                  bgColor = '#374151'; // ダークグレー
               }
             }
 
             // セッションボックスを描画（より大きく）
+            console.log(`セッション色設定: ${bgColor} (タイプ: ${session.type})`);
             ctx.fillStyle = bgColor;
             ctx.fillRect(x + 6, sessionY - 18, cellWidth - 12, 24);
 
             // セッションテキストを描画（より大きく）
-            ctx.fillStyle = 'rgb(255, 255, 255)';
+            ctx.fillStyle = '#FFFFFF';
             ctx.font = 'bold 14px Arial, sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText(displayText, x + 10, sessionY - 4);
@@ -205,11 +199,11 @@ export default function Calendar() {
             const boxX = (canvas.width - leaderTextWidth - 40) / 2;
             const boxY = canvas.height - 80;
             
-            ctx.fillStyle = 'rgb(5, 150, 105)';
+            ctx.fillStyle = '#059669';
             ctx.fillRect(boxX, boxY, leaderTextWidth + 40, 40);
             
             // リーダー情報テキストを描画
-            ctx.fillStyle = 'rgb(255, 255, 255)';
+            ctx.fillStyle = '#FFFFFF';
             ctx.font = 'bold 24px Arial, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(`今月のリーダー: ${leaderData.name}`, canvas.width / 2, canvas.height - 50);
@@ -219,8 +213,10 @@ export default function Calendar() {
         console.log('リーダー情報の取得に失敗しました:', error);
       }
 
-      // 画像をダウンロード
+      // 画像データをチェックしてカラー情報を確認
       console.log('画像ダウンロード処理開始...');
+      const imageData = ctx.getImageData(0, 0, 100, 100);
+      console.log('画像データサンプル（最初の10ピクセル）:', Array.from(imageData.data.slice(0, 40)));
       
       canvas.toBlob((blob) => {
         if (!blob) {
@@ -342,7 +338,7 @@ export default function Calendar() {
           URL.revokeObjectURL(url);
         }, 10000);
         
-      }, 'image/png', 1.0); // PNG形式で最高品質出力してカラー保持を確実に
+      }, 'image/png'); // PNG形式でカラー出力
     } catch (error) {
       console.error('画像生成エラー:', error);
       const errorMessage = error instanceof Error ? error.message : '不明なエラー';
