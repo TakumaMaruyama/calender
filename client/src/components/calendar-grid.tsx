@@ -223,7 +223,7 @@ export function CalendarGrid({
                         <span className={`${zoomLevel <= 0.8 ? 'text-xs' : 'text-sm'}`}>
                           {format(day.date, 'd')}
                         </span>
-                        {zoomLevel > 0.8 && <LeaderName date={day.dateString} />}
+                        <LeaderName date={day.dateString} zoomLevel={zoomLevel} />
                       </div>
                     </div>
                     
@@ -288,7 +288,7 @@ export function CalendarGrid({
 }
 
 // リーダー名表示コンポーネント（APIからリーダー情報を取得）
-function LeaderName({ date }: { date: string }) {
+function LeaderName({ date, zoomLevel }: { date: string; zoomLevel: number }) {
   const [leader, setLeader] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const targetDate = new Date(date);
@@ -333,8 +333,19 @@ function LeaderName({ date }: { date: string }) {
     return null;
   }
 
+  // ズームレベルに応じてスタイルを調整
+  const getSizeClasses = () => {
+    if (zoomLevel <= 0.6) {
+      return "text-xs px-1 py-0.5"; // 最小サイズ
+    } else if (zoomLevel <= 0.8) {
+      return "text-xs px-1 py-0.5"; // 小サイズ
+    } else {
+      return "text-xs px-1"; // 通常サイズ
+    }
+  };
+
   return (
-    <span className="text-xs text-pool-600 font-medium bg-pool-100 px-1 rounded whitespace-nowrap">
+    <span className={`text-pool-600 font-medium bg-pool-100 rounded whitespace-nowrap ${getSizeClasses()}`}>
       {leader}
     </span>
   );
