@@ -274,8 +274,8 @@ export class DatabaseStorage implements IStorage {
         const sessionDate = new Date(currentWeek);
         sessionDate.setDate(sessionDate.getDate() + weekday);
 
-        // 開始日より前はスキップ
-        if (sessionDate <= startDate) continue;
+        // 開始日より前はスキップ（開始日は含める）
+        if (sessionDate < startDate) continue;
 
         // 終了日をチェック
         if (endDate && sessionDate > endDate) return;
