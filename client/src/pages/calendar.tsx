@@ -401,8 +401,8 @@ export default function Calendar() {
         onClose={() => setIsDeleteModalOpen(false)}
         session={selectedSession}
         onSuccess={() => {
-          // データを再取得
-          window.location.reload();
+          // キャッシュを無効化してデータを再取得（ページリロードを避ける）
+          // 削除ダイアログ内でqueryClientが既に無効化されているため、ここでは何もしない
         }}
       />
     </div>

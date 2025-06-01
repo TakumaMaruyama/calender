@@ -183,10 +183,9 @@ export function CalendarGrid({
                         title={displayText} // ツールチップで全文表示
                       >
                         <div 
-                          className="flex-1 px-2 py-1 text-xs font-medium leading-tight export-full-text cursor-pointer"
+                          className="flex-1 px-2 py-1 text-xs font-medium export-full-text cursor-pointer overflow-hidden whitespace-nowrap"
                           style={{
-                            wordBreak: 'break-all',
-                            lineHeight: '1.2'
+                            textOverflow: 'ellipsis'
                           }}
                           data-full-text={displayText}
                           onClick={(e) => {
@@ -194,7 +193,7 @@ export function CalendarGrid({
                             // メニュー編集機能があれば、ここで編集ダイアログを開く
                           }}
                         >
-                          {displayText.length > 8 ? `${displayText.substring(0, 8)}...` : displayText}
+                          {displayText}
                         </div>
                         <button 
                           className="w-6 h-full bg-red-500 hover:bg-red-600 text-white text-xs font-bold flex items-center justify-center rounded-r border-none cursor-pointer"
