@@ -292,7 +292,7 @@ export default function Calendar() {
                   <h2>${format(currentDate, 'yyyy年MM月')}</h2>
                   <img src="${url}" alt="カレンダー画像" />
                   <br>
-                  <a href="${url}" download="swimming-calendar-${format(currentDate, 'yyyy-MM')}.jpg" class="download-btn">
+                  <a href="${url}" download="swimming-calendar-${format(currentDate, 'yyyy-MM')}.png" class="download-btn">
                     📥 画像をダウンロード
                   </a>
                   <div class="info">
@@ -315,7 +315,7 @@ export default function Calendar() {
           // ポップアップがブロックされた場合、直接ダウンロードを試行
           const link = document.createElement('a');
           link.href = url;
-          link.download = `swimming-calendar-${format(currentDate, 'yyyy-MM')}.jpg`;
+          link.download = `swimming-calendar-${format(currentDate, 'yyyy-MM')}.png`;
           link.style.display = 'none';
           
           document.body.appendChild(link);
