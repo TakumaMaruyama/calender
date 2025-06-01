@@ -70,17 +70,25 @@ export default function Calendar() {
       
       console.log('キャンバス作成中...');
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext('2d', { 
+        alpha: false,
+        colorSpace: 'srgb',
+        willReadFrequently: false 
+      });
       if (!ctx) {
         throw new Error('キャンバスコンテキストの取得に失敗しました');
       }
 
       canvas.width = 1200;
-      canvas.height = 800;
+      canvas.height = 850;
 
-      // 背景色を設定
+      // 背景色を明確に設定（カラー出力確保）
+      ctx.globalCompositeOperation = 'source-over';
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // アンチエイリアシングを有効にしてテキストを滑らかに
+      ctx.imageSmoothingEnabled = true;
 
       // フォント設定
       ctx.font = '16px Arial, sans-serif';
@@ -136,15 +144,25 @@ export default function Calendar() {
             const sessionY = y + 40 + sessionIndex * 20;
             const displayText = session.title || (session.type ? getTrainingTypeLabel(session.type) : '');
             
-            // セッションの背景色を設定
+            // セッションの背景色を設定（より鮮やかな色を使用）
             let bgColor = '#6B7280';
+            let textColor = '#ffffff';
             if (session.type) {
               switch (session.type) {
-                case 'endurance': bgColor = '#3B82F6'; break;
-                case 'speed': bgColor = '#EF4444'; break;
-                case 'technique': bgColor = '#10B981'; break;
-                case 'recovery': bgColor = '#8B5CF6'; break;
-                default: bgColor = '#6B7280';
+                case 'endurance': 
+                  bgColor = '#2563EB'; // より濃い青
+                  break;
+                case 'speed': 
+                  bgColor = '#DC2626'; // より濃い赤
+                  break;
+                case 'technique': 
+                  bgColor = '#059669'; // より濃い緑
+                  break;
+                case 'recovery': 
+                  bgColor = '#7C3AED'; // より濃い紫
+                  break;
+                default: 
+                  bgColor = '#4B5563'; // より濃いグレー
               }
             }
 
@@ -166,6 +184,22 @@ export default function Calendar() {
             ctx.fillText(`+${sessions.length - 3} 他`, x + 6, y + cellHeight - 8);
           }
         }
+      }
+
+      // リーダー情報を描画（月の最初の日のリーダーを表示）
+      try {
+        const leaderResponse = await fetch(`/api/leader/${format(currentDate, 'yyyy-MM-01')}`);
+        if (leaderResponse.ok) {
+          const leaderData = await leaderResponse.json();
+          if (leaderData?.name) {
+            ctx.fillStyle = '#059669';
+            ctx.font = 'bold 16px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(`今月のリーダー: ${leaderData.name}`, canvas.width / 2, canvas.height - 30);
+          }
+        }
+      } catch (error) {
+        console.log('リーダー情報の取得に失敗しました:', error);
       }
 
       // 画像をダウンロード
@@ -289,9 +323,9 @@ export default function Calendar() {
         // リソースを解放
         setTimeout(() => {
           URL.revokeObjectURL(url);
-        }, 5000);
+        }, 10000);
         
-      }, 'image/png', 0.95);
+      }, 'image/png', 1.0); // 最高品質で出力してカラー保持を確実に
     } catch (error) {
       console.error('画像生成エラー:', error);
       const errorMessage = error instanceof Error ? error.message : '不明なエラー';
