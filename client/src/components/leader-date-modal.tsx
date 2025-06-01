@@ -40,7 +40,7 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
   // ローカルストレージからリーダーデータを取得
   useEffect(() => {
     if (isOpen) {
-      const savedLeaders = localStorage.getItem('swimtracker-leaders');
+      const savedLeaders = localStorage.getItem('scheduler-leaders');
       if (savedLeaders) {
         setLeaders(JSON.parse(savedLeaders));
       } else {

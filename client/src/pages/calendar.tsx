@@ -247,7 +247,7 @@ export default function Calendar() {
           newWindow.document.write(`
             <html>
               <head>
-                <title>カレンダー画像 - ${format(currentDate, 'yyyy年MM月')}</title>
+                <title>Scheduler - ${format(currentDate, 'yyyy年MM月')}</title>
                 <style>
                   body { 
                     margin: 0; 
@@ -319,7 +319,7 @@ export default function Calendar() {
           // ポップアップがブロックされた場合、直接ダウンロードを試行
           const link = document.createElement('a');
           link.href = url;
-          link.download = `swimming-calendar-${format(currentDate, 'yyyy-MM')}.png`;
+          link.download = `scheduler-calendar-${format(currentDate, 'yyyy-MM')}.png`;
           link.style.display = 'none';
           
           document.body.appendChild(link);
@@ -369,7 +369,7 @@ export default function Calendar() {
           <div className="flex justify-between items-center h-14 sm:h-16">
             <div className="flex items-center space-x-2">
               <Waves className="text-ocean-500 h-6 w-6 sm:h-7 sm:w-7" />
-              <h1 className="text-lg sm:text-xl font-bold text-ocean-900">SwimTracker</h1>
+              <h1 className="text-lg sm:text-xl font-bold text-ocean-900">Scheduler</h1>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/leaders">

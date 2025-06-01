@@ -26,7 +26,7 @@ export function LeaderManagement() {
 
   // 初期化時にローカルストレージからデータを読み込み
   useEffect(() => {
-    const savedLeaders = localStorage.getItem('swimtracker-leaders');
+    const savedLeaders = localStorage.getItem('scheduler-leaders');
     if (savedLeaders) {
       setLeaders(JSON.parse(savedLeaders));
     } else {
@@ -50,14 +50,14 @@ export function LeaderManagement() {
         { id: 16, name: "弥広", order: 16 }
       ];
       setLeaders(defaultLeaders);
-      localStorage.setItem('swimtracker-leaders', JSON.stringify(defaultLeaders));
+      localStorage.setItem('scheduler-leaders', JSON.stringify(defaultLeaders));
     }
   }, []);
 
   // リーダーリストが変更されたらローカルストレージに保存
   useEffect(() => {
     if (leaders.length > 0) {
-      localStorage.setItem('swimtracker-leaders', JSON.stringify(leaders));
+      localStorage.setItem('scheduler-leaders', JSON.stringify(leaders));
     }
   }, [leaders]);
 
