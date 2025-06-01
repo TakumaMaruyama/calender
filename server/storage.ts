@@ -179,6 +179,211 @@ export class MemStorage implements IStorage {
       recurringEndDate: null
     });
 
+    // 6月のトレーニングデータを追加
+    await this.createTrainingSession({
+      title: "技術練習",
+      type: "technique",
+      date: "2025-06-02",
+      startTime: "18:00",
+      endTime: "19:30",
+      strokes: ["freestyle", "backstroke"],
+      distance: 1500,
+      intensity: "medium",
+      lanes: "1-4",
+      menuDetails: "ウォームアップ: 300m 自由形\nキック: 4×50m 板キック\nメイン: 8×100m フォーム練習",
+      coachNotes: "ストロークテクニック重視",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "持久力トレーニング",
+      type: "endurance",
+      date: "2025-06-03",
+      startTime: "06:30",
+      endTime: "08:00",
+      strokes: ["freestyle"],
+      distance: 2500,
+      intensity: "moderate",
+      lanes: "5-8",
+      menuDetails: "ウォームアップ: 400m 自由形\nメイン: 1500m 持久泳\nクールダウン: 200m 背泳ぎ",
+      coachNotes: "一定ペースで泳ぐ",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "スピード練習",
+      type: "speed",
+      date: "2025-06-05",
+      startTime: "19:00",
+      endTime: "20:30",
+      strokes: ["freestyle", "butterfly"],
+      distance: 1200,
+      intensity: "high",
+      lanes: "1-8",
+      menuDetails: "ウォームアップ: 400m\nメイン: 10×50m スプリント\nクールダウン: 300m",
+      coachNotes: "全力で泳ぐ",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "回復練習",
+      type: "recovery",
+      date: "2025-06-07",
+      startTime: "17:30",
+      endTime: "18:30",
+      strokes: ["backstroke", "breaststroke"],
+      distance: 800,
+      intensity: "easy",
+      lanes: "1-4",
+      menuDetails: "ゆっくりとした回復泳\n背泳ぎと平泳ぎを中心に",
+      coachNotes: "リラックスして泳ぐ",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "IM練習",
+      type: "technique",
+      date: "2025-06-10",
+      startTime: "18:30",
+      endTime: "20:00",
+      strokes: ["freestyle", "backstroke", "breaststroke", "butterfly"],
+      distance: 1600,
+      intensity: "medium",
+      lanes: "5-8",
+      menuDetails: "ウォームアップ: 200m\nメイン: 4×200m IM\nクールダウン: 400m",
+      coachNotes: "各種目のフォーム確認",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "レース練習",
+      type: "speed",
+      date: "2025-06-12",
+      startTime: "19:30",
+      endTime: "21:00",
+      strokes: ["freestyle"],
+      distance: 1000,
+      intensity: "race_pace",
+      lanes: "1-8",
+      menuDetails: "ウォームアップ: 600m\nメイン: 4×100m レースペース\nクールダウン: 200m",
+      coachNotes: "レース本番を想定",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "持久力強化",
+      type: "endurance",
+      date: "2025-06-15",
+      startTime: "07:00",
+      endTime: "08:30",
+      strokes: ["freestyle"],
+      distance: 3000,
+      intensity: "moderate",
+      lanes: "1-8",
+      menuDetails: "ウォームアップ: 500m\nメイン: 2000m 持久泳\nクールダウン: 500m",
+      coachNotes: "呼吸を意識",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "キック強化",
+      type: "technique",
+      date: "2025-06-17",
+      startTime: "18:00",
+      endTime: "19:00",
+      strokes: ["freestyle", "backstroke"],
+      distance: 1000,
+      intensity: "medium",
+      lanes: "1-4",
+      menuDetails: "板キック中心の練習\n各種目50mずつ",
+      coachNotes: "キックフォーム重視",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "混合練習",
+      type: "endurance",
+      date: "2025-06-20",
+      startTime: "19:00",
+      endTime: "20:30",
+      strokes: ["freestyle", "backstroke", "breaststroke"],
+      distance: 2000,
+      intensity: "moderate",
+      lanes: "5-8",
+      menuDetails: "3種目を組み合わせた練習",
+      coachNotes: "種目変更時のフォーム確認",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "タイムトライアル",
+      type: "speed",
+      date: "2025-06-22",
+      startTime: "18:30",
+      endTime: "20:00",
+      strokes: ["freestyle"],
+      distance: 800,
+      intensity: "race_pace",
+      lanes: "1-8",
+      menuDetails: "50m、100m、200mのタイム測定",
+      coachNotes: "ベストタイム狙い",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "フォーム修正",
+      type: "technique",
+      date: "2025-06-25",
+      startTime: "17:00",
+      endTime: "18:30",
+      strokes: ["butterfly", "breaststroke"],
+      distance: 1200,
+      intensity: "easy",
+      lanes: "1-4",
+      menuDetails: "バタフライと平泳ぎのフォーム練習",
+      coachNotes: "ゆっくり正確に",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
+    await this.createTrainingSession({
+      title: "総合練習",
+      type: "endurance",
+      date: "2025-06-28",
+      startTime: "19:30",
+      endTime: "21:00",
+      strokes: ["freestyle", "backstroke", "breaststroke", "butterfly"],
+      distance: 2500,
+      intensity: "medium",
+      lanes: "1-8",
+      menuDetails: "全種目を含む総合的な練習",
+      coachNotes: "バランス良く練習",
+      isRecurring: false,
+      recurringPattern: null,
+      recurringEndDate: null
+    });
+
     // リーダースケジュールを初期化（6月2日から元翔でスタート）
     await this.initializeLeaderSchedule();
   }
