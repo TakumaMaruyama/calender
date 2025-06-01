@@ -295,40 +295,7 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                   )}
                 />
 
-                {form.watch("recurringPattern") === "weekly" && (
-                  <div>
-                    <FormLabel className="text-sm font-medium text-ocean-700 mb-2 block">
-                      曜日選択
-                    </FormLabel>
-                    <div className="grid grid-cols-7 gap-2">
-                      {[
-                        { value: '0', label: '日' },
-                        { value: '1', label: '月' },
-                        { value: '2', label: '火' },
-                        { value: '3', label: '水' },
-                        { value: '4', label: '木' },
-                        { value: '5', label: '金' },
-                        { value: '6', label: '土' }
-                      ].map((day) => (
-                        <div key={day.value} className="flex flex-col items-center">
-                          <Checkbox
-                            checked={selectedWeekdays.includes(day.value)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedWeekdays(prev => [...prev, day.value]);
-                              } else {
-                                setSelectedWeekdays(prev => prev.filter(d => d !== day.value));
-                              }
-                              form.setValue("weekdays", selectedWeekdays);
-                            }}
-                            className="border-ocean-300 text-ocean-500 focus:ring-ocean-500"
-                          />
-                          <span className="text-xs mt-1">{day.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
