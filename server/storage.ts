@@ -246,8 +246,24 @@ export class DatabaseStorage implements IStorage {
     const endDate = baseSession.recurringEndDate ? new Date(baseSession.recurringEndDate) : null;
     const maxOccurrences = baseSession.maxOccurrences || 50;
 
-    if (baseSession.recurringPattern === 'weekly_by_weekdays' && baseSession.weekdays) {
-      await this.generateWeeklyByWeekdays(baseSession, startDate, endDate, maxOccurrences, originalSessionId);
+    switch (baseSession.recurringPattern) {
+      case 'daily':
+        await this.generateDailySessions(baseSession, startDate, endDate, maxOccurrences);
+        break;
+      case 'weekly':
+        await this.generateWeeklySessions(baseSession, startDate, endDate, maxOccurrences);
+        break;
+      case 'biweekly':
+        await this.generateBiweeklySessions(baseSession, startDate, endDate, maxOccurrences);
+        break;
+      case 'monthly':
+        await this.generateMonthlySessions(baseSession, startDate, endDate, maxOccurrences);
+        break;
+      case 'weekly_by_weekdays':
+        if (baseSession.weekdays) {
+          await this.generateWeeklyByWeekdays(baseSession, startDate, endDate, maxOccurrences, originalSessionId);
+        }
+        break;
     }
   }
 
@@ -305,6 +321,154 @@ export class DatabaseStorage implements IStorage {
       
       // 次の週へ
       currentWeek.setDate(currentWeek.getDate() + 7);
+    }
+  }
+
+  private async generateDailySessions(
+    baseSession: InsertTrainingSession,
+    startDate: Date,
+    endDate: Date | null,
+    maxOccurrences: number
+  ): Promise<void> {
+    let count = 0;
+    let currentDate = new Date(startDate);
+    currentDate.setDate(currentDate.getDate() + 1); // 翌日から開始
+
+    while (count < maxOccurrences) {
+      if (endDate && currentDate > endDate) break;
+
+      await db.insert(trainingSessions).values({
+        ...baseSession,
+        date: currentDate.toISOString().split('T')[0],
+        title: baseSession.title || null,
+        type: baseSession.type || null,
+        endTime: baseSession.endTime || null,
+        strokes: baseSession.strokes || null,
+        distance: baseSession.distance || null,
+        intensity: baseSession.intensity || null,
+        lanes: baseSession.lanes || null,
+        menuDetails: baseSession.menuDetails || null,
+        coachNotes: baseSession.coachNotes || null,
+        isRecurring: false,
+        recurringPattern: null,
+        recurringEndDate: null,
+        weekdays: null,
+        maxOccurrences: null
+      });
+
+      count++;
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  }
+
+  private async generateWeeklySessions(
+    baseSession: InsertTrainingSession,
+    startDate: Date,
+    endDate: Date | null,
+    maxOccurrences: number
+  ): Promise<void> {
+    let count = 0;
+    let currentDate = new Date(startDate);
+    currentDate.setDate(currentDate.getDate() + 7); // 1週間後から開始
+
+    while (count < maxOccurrences) {
+      if (endDate && currentDate > endDate) break;
+
+      await db.insert(trainingSessions).values({
+        ...baseSession,
+        date: currentDate.toISOString().split('T')[0],
+        title: baseSession.title || null,
+        type: baseSession.type || null,
+        endTime: baseSession.endTime || null,
+        strokes: baseSession.strokes || null,
+        distance: baseSession.distance || null,
+        intensity: baseSession.intensity || null,
+        lanes: baseSession.lanes || null,
+        menuDetails: baseSession.menuDetails || null,
+        coachNotes: baseSession.coachNotes || null,
+        isRecurring: false,
+        recurringPattern: null,
+        recurringEndDate: null,
+        weekdays: null,
+        maxOccurrences: null
+      });
+
+      count++;
+      currentDate.setDate(currentDate.getDate() + 7);
+    }
+  }
+
+  private async generateBiweeklySessions(
+    baseSession: InsertTrainingSession,
+    startDate: Date,
+    endDate: Date | null,
+    maxOccurrences: number
+  ): Promise<void> {
+    let count = 0;
+    let currentDate = new Date(startDate);
+    currentDate.setDate(currentDate.getDate() + 14); // 2週間後から開始
+
+    while (count < maxOccurrences) {
+      if (endDate && currentDate > endDate) break;
+
+      await db.insert(trainingSessions).values({
+        ...baseSession,
+        date: currentDate.toISOString().split('T')[0],
+        title: baseSession.title || null,
+        type: baseSession.type || null,
+        endTime: baseSession.endTime || null,
+        strokes: baseSession.strokes || null,
+        distance: baseSession.distance || null,
+        intensity: baseSession.intensity || null,
+        lanes: baseSession.lanes || null,
+        menuDetails: baseSession.menuDetails || null,
+        coachNotes: baseSession.coachNotes || null,
+        isRecurring: false,
+        recurringPattern: null,
+        recurringEndDate: null,
+        weekdays: null,
+        maxOccurrences: null
+      });
+
+      count++;
+      currentDate.setDate(currentDate.getDate() + 14);
+    }
+  }
+
+  private async generateMonthlySessions(
+    baseSession: InsertTrainingSession,
+    startDate: Date,
+    endDate: Date | null,
+    maxOccurrences: number
+  ): Promise<void> {
+    let count = 0;
+    let currentDate = new Date(startDate);
+    currentDate.setMonth(currentDate.getMonth() + 1); // 1ヶ月後から開始
+
+    while (count < maxOccurrences) {
+      if (endDate && currentDate > endDate) break;
+
+      await db.insert(trainingSessions).values({
+        ...baseSession,
+        date: currentDate.toISOString().split('T')[0],
+        title: baseSession.title || null,
+        type: baseSession.type || null,
+        endTime: baseSession.endTime || null,
+        strokes: baseSession.strokes || null,
+        distance: baseSession.distance || null,
+        intensity: baseSession.intensity || null,
+        lanes: baseSession.lanes || null,
+        menuDetails: baseSession.menuDetails || null,
+        coachNotes: baseSession.coachNotes || null,
+        isRecurring: false,
+        recurringPattern: null,
+        recurringEndDate: null,
+        weekdays: null,
+        maxOccurrences: null
+      });
+
+      count++;
+      currentDate.setMonth(currentDate.getMonth() + 1);
     }
   }
 
