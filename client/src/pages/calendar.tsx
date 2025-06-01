@@ -71,7 +71,7 @@ export default function Calendar() {
       console.log('キャンバス作成中...');
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d', { 
-        alpha: false,
+        alpha: true,
         colorSpace: 'srgb',
         willReadFrequently: false 
       });
@@ -83,14 +83,17 @@ export default function Calendar() {
       canvas.width = 1600;
       canvas.height = 1200;
 
-      // 背景色を明確に設定（カラー出力確保）
+      // カラー出力を確実にするため、RGBAで背景を設定
       ctx.globalCompositeOperation = 'source-over';
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // アンチエイリアシングとテキスト品質を向上
+      // カラー補間と画質設定
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
+      
+      // カラーフィルターを明示的に設定
+      ctx.filter = 'saturate(1.2) contrast(1.1)';
 
       // フォント設定
       ctx.font = '16px Arial, sans-serif';
@@ -146,28 +149,28 @@ export default function Calendar() {
             const sessionY = y + 60 + sessionIndex * 30;
             const displayText = session.title || (session.type ? getTrainingTypeLabel(session.type) : '');
             
-            // セッションの背景色を設定（より鮮やかなカラー）
-            let bgColor = '#6B7280';
-            let textColor = '#ffffff';
+            // セッションの背景色を設定（RGB値で確実にカラー指定）
+            let bgColor = 'rgb(107, 114, 128)';
+            let textColor = 'rgb(255, 255, 255)';
             if (session.type) {
               switch (session.type) {
                 case 'endurance': 
-                  bgColor = '#1D4ED8'; // 鮮やかな青
+                  bgColor = 'rgb(29, 78, 216)'; // 青
                   break;
                 case 'speed': 
-                  bgColor = '#DC2626'; // 鮮やかな赤
+                  bgColor = 'rgb(220, 38, 38)'; // 赤
                   break;
                 case 'technique': 
-                  bgColor = '#059669'; // 鮮やかな緑
+                  bgColor = 'rgb(5, 150, 105)'; // 緑
                   break;
                 case 'recovery': 
-                  bgColor = '#7C3AED'; // 鮮やかな紫
+                  bgColor = 'rgb(124, 58, 237)'; // 紫
                   break;
                 case 'competition':
-                  bgColor = '#EA580C'; // 鮮やかなオレンジ
+                  bgColor = 'rgb(234, 88, 12)'; // オレンジ
                   break;
                 default: 
-                  bgColor = '#374151'; // ダークグレー
+                  bgColor = 'rgb(55, 65, 81)'; // ダークグレー
               }
             }
 
@@ -176,7 +179,7 @@ export default function Calendar() {
             ctx.fillRect(x + 6, sessionY - 18, cellWidth - 12, 24);
 
             // セッションテキストを描画（より大きく）
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = 'rgb(255, 255, 255)';
             ctx.font = 'bold 14px Arial, sans-serif';
             ctx.textAlign = 'left';
             ctx.fillText(displayText, x + 10, sessionY - 4);
@@ -202,11 +205,11 @@ export default function Calendar() {
             const boxX = (canvas.width - leaderTextWidth - 40) / 2;
             const boxY = canvas.height - 80;
             
-            ctx.fillStyle = '#059669';
+            ctx.fillStyle = 'rgb(5, 150, 105)';
             ctx.fillRect(boxX, boxY, leaderTextWidth + 40, 40);
             
             // リーダー情報テキストを描画
-            ctx.fillStyle = '#ffffff';
+            ctx.fillStyle = 'rgb(255, 255, 255)';
             ctx.font = 'bold 24px Arial, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(`今月のリーダー: ${leaderData.name}`, canvas.width / 2, canvas.height - 50);
@@ -289,7 +292,7 @@ export default function Calendar() {
                   <h2>${format(currentDate, 'yyyy年MM月')}</h2>
                   <img src="${url}" alt="カレンダー画像" />
                   <br>
-                  <a href="${url}" download="swimming-calendar-${format(currentDate, 'yyyy-MM')}.png" class="download-btn">
+                  <a href="${url}" download="swimming-calendar-${format(currentDate, 'yyyy-MM')}.jpg" class="download-btn">
                     📥 画像をダウンロード
                   </a>
                   <div class="info">
@@ -312,7 +315,7 @@ export default function Calendar() {
           // ポップアップがブロックされた場合、直接ダウンロードを試行
           const link = document.createElement('a');
           link.href = url;
-          link.download = `swimming-calendar-${format(currentDate, 'yyyy-MM')}.png`;
+          link.download = `swimming-calendar-${format(currentDate, 'yyyy-MM')}.jpg`;
           link.style.display = 'none';
           
           document.body.appendChild(link);
@@ -339,7 +342,7 @@ export default function Calendar() {
           URL.revokeObjectURL(url);
         }, 10000);
         
-      }, 'image/png', 1.0); // 最高品質で出力してカラー保持を確実に
+      }, 'image/png', 1.0); // PNG形式で最高品質出力してカラー保持を確実に
     } catch (error) {
       console.error('画像生成エラー:', error);
       const errorMessage = error instanceof Error ? error.message : '不明なエラー';
