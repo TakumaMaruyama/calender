@@ -79,34 +79,36 @@ export default function Calendar() {
         throw new Error('キャンバスコンテキストの取得に失敗しました');
       }
 
-      canvas.width = 1200;
-      canvas.height = 850;
+      // より高解像度でカラー品質を向上
+      canvas.width = 1600;
+      canvas.height = 1200;
 
       // 背景色を明確に設定（カラー出力確保）
       ctx.globalCompositeOperation = 'source-over';
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // アンチエイリアシングを有効にしてテキストを滑らかに
+      // アンチエイリアシングとテキスト品質を向上
       ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
 
       // フォント設定
       ctx.font = '16px Arial, sans-serif';
       ctx.textAlign = 'center';
 
-      // タイトルを描画
+      // タイトルを描画（カラーで鮮明に）
       ctx.fillStyle = '#1E293B';
-      ctx.font = 'bold 24px Arial, sans-serif';
-      ctx.fillText(monthName, canvas.width / 2, 40);
+      ctx.font = 'bold 36px Arial, sans-serif';
+      ctx.fillText(monthName, canvas.width / 2, 60);
 
       // 曜日ヘッダーを描画
       const dayNames = ['日', '月', '火', '水', '木', '金', '土'];
       const cellWidth = canvas.width / 7;
-      const cellHeight = 100;
-      const startY = 80;
+      const cellHeight = 140;
+      const startY = 120;
 
-      ctx.font = 'bold 14px Arial, sans-serif';
-      ctx.fillStyle = '#64748B';
+      ctx.font = 'bold 20px Arial, sans-serif';
+      ctx.fillStyle = '#475569';
       
       dayNames.forEach((day, index) => {
         const x = index * cellWidth + cellWidth / 2;
@@ -114,7 +116,7 @@ export default function Calendar() {
       });
 
       // カレンダーの日付とセッションを描画
-      ctx.font = '12px Arial, sans-serif';
+      ctx.font = '16px Arial, sans-serif';
       
       for (let week = 0; week < 6; week++) {
         for (let day = 0; day < 7; day++) {
@@ -123,65 +125,68 @@ export default function Calendar() {
 
           const calendarDay = calendarDays[dayIndex];
           const x = day * cellWidth;
-          const y = startY + 20 + week * cellHeight;
+          const y = startY + 30 + week * cellHeight;
 
-          // セルの境界線を描画
-          ctx.strokeStyle = '#E2E8F0';
-          ctx.lineWidth = 1;
+          // セルの境界線を描画（より鮮明に）
+          ctx.strokeStyle = '#CBD5E1';
+          ctx.lineWidth = 2;
           ctx.strokeRect(x, y, cellWidth, cellHeight);
 
-          // 日付を描画
+          // 日付を描画（より大きく、鮮明に）
           ctx.fillStyle = calendarDay.isCurrentMonth ? '#1E293B' : '#94A3B8';
-          ctx.font = 'bold 14px Arial, sans-serif';
+          ctx.font = 'bold 20px Arial, sans-serif';
           ctx.textAlign = 'left';
-          ctx.fillText(format(calendarDay.date, 'd'), x + 8, y + 20);
+          ctx.fillText(format(calendarDay.date, 'd'), x + 12, y + 30);
 
           // その日のセッションを取得
           const sessions = trainingSessions?.filter(session => session.date === calendarDay.dateString) || [];
           
           // セッションを描画（最大3つまで）
           sessions.slice(0, 3).forEach((session, sessionIndex) => {
-            const sessionY = y + 40 + sessionIndex * 20;
+            const sessionY = y + 60 + sessionIndex * 30;
             const displayText = session.title || (session.type ? getTrainingTypeLabel(session.type) : '');
             
-            // セッションの背景色を設定（より鮮やかな色を使用）
+            // セッションの背景色を設定（より鮮やかなカラー）
             let bgColor = '#6B7280';
             let textColor = '#ffffff';
             if (session.type) {
               switch (session.type) {
                 case 'endurance': 
-                  bgColor = '#2563EB'; // より濃い青
+                  bgColor = '#1D4ED8'; // 鮮やかな青
                   break;
                 case 'speed': 
-                  bgColor = '#DC2626'; // より濃い赤
+                  bgColor = '#DC2626'; // 鮮やかな赤
                   break;
                 case 'technique': 
-                  bgColor = '#059669'; // より濃い緑
+                  bgColor = '#059669'; // 鮮やかな緑
                   break;
                 case 'recovery': 
-                  bgColor = '#7C3AED'; // より濃い紫
+                  bgColor = '#7C3AED'; // 鮮やかな紫
+                  break;
+                case 'competition':
+                  bgColor = '#EA580C'; // 鮮やかなオレンジ
                   break;
                 default: 
-                  bgColor = '#4B5563'; // より濃いグレー
+                  bgColor = '#374151'; // ダークグレー
               }
             }
 
-            // セッションボックスを描画
+            // セッションボックスを描画（より大きく）
             ctx.fillStyle = bgColor;
-            ctx.fillRect(x + 4, sessionY - 12, cellWidth - 8, 16);
+            ctx.fillRect(x + 6, sessionY - 18, cellWidth - 12, 24);
 
-            // セッションテキストを描画
+            // セッションテキストを描画（より大きく）
             ctx.fillStyle = '#ffffff';
-            ctx.font = '10px Arial, sans-serif';
+            ctx.font = 'bold 14px Arial, sans-serif';
             ctx.textAlign = 'left';
-            ctx.fillText(displayText, x + 6, sessionY - 2);
+            ctx.fillText(displayText, x + 10, sessionY - 4);
           });
 
           // セッション数が3つを超える場合の表示
           if (sessions.length > 3) {
-            ctx.fillStyle = '#64748B';
-            ctx.font = '10px Arial, sans-serif';
-            ctx.fillText(`+${sessions.length - 3} 他`, x + 6, y + cellHeight - 8);
+            ctx.fillStyle = '#6B7280';
+            ctx.font = 'bold 14px Arial, sans-serif';
+            ctx.fillText(`+${sessions.length - 3} 他`, x + 10, y + cellHeight - 15);
           }
         }
       }
@@ -192,10 +197,19 @@ export default function Calendar() {
         if (leaderResponse.ok) {
           const leaderData = await leaderResponse.json();
           if (leaderData?.name) {
+            // リーダー情報の背景ボックスを描画
+            const leaderTextWidth = ctx.measureText(`今月のリーダー: ${leaderData.name}`).width;
+            const boxX = (canvas.width - leaderTextWidth - 40) / 2;
+            const boxY = canvas.height - 80;
+            
             ctx.fillStyle = '#059669';
-            ctx.font = 'bold 16px Arial, sans-serif';
+            ctx.fillRect(boxX, boxY, leaderTextWidth + 40, 40);
+            
+            // リーダー情報テキストを描画
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px Arial, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(`今月のリーダー: ${leaderData.name}`, canvas.width / 2, canvas.height - 30);
+            ctx.fillText(`今月のリーダー: ${leaderData.name}`, canvas.width / 2, canvas.height - 50);
           }
         }
       } catch (error) {
