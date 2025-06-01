@@ -176,10 +176,11 @@ export function CalendarGrid({
                     const displayText = session.title || getTrainingTypeLabel(session.type || '');
                     const hasContent = displayText && displayText.trim() !== '';
                     
-                    // titleがある場合は無色、typeのみの場合は色付き
+                    // titleがある場合は無色、typeのみの場合は色付き、空白も無色
                     const isCustomTitle = session.title && session.title.trim() !== '';
-                    const colorClass = isCustomTitle ? 'bg-transparent text-black' : 
-                                     (hasContent ? (session.type ? getTrainingTypeColor(session.type) + ' text-white' : 'bg-gray-500 text-white') : 'bg-gray-300 text-white');
+                    const isEmpty = !hasContent;
+                    const colorClass = (isCustomTitle || isEmpty) ? 'bg-transparent text-black' : 
+                                     (session.type ? getTrainingTypeColor(session.type) + ' text-white' : 'bg-gray-500 text-white');
                     
                     return (
                       <div
