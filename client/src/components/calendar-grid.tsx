@@ -174,11 +174,13 @@ export function CalendarGrid({
             transition: 'transform 0.2s ease-in-out'
           }}
         >
-          <Card className="bg-white rounded-xl shadow-sm border border-ocean-100 overflow-hidden min-w-[800px]">
+          <Card className="bg-white rounded-xl shadow-sm border border-ocean-100 overflow-hidden min-w-[700px]">
             {/* Calendar Header */}
             <div className="grid grid-cols-7 bg-ocean-50 border-b border-ocean-100">
               {['日', '月', '火', '水', '木', '金', '土'].map((day) => (
-                <div key={day} className="p-4 text-center text-sm font-semibold text-ocean-700 min-w-[114px]">
+                <div key={day} className={`text-center font-semibold text-ocean-700 min-w-[100px] ${
+                  zoomLevel <= 0.8 ? 'p-2 text-xs' : 'p-4 text-sm'
+                }`}>
                   {day}
                 </div>
               ))}
@@ -204,13 +206,13 @@ export function CalendarGrid({
                       }
                     }}
                     className={`
-                      relative h-24 lg:h-32 p-2 border-r border-b border-ocean-100 cursor-pointer transition-colors min-w-[114px]
+                      relative h-20 lg:h-28 p-1 border-r border-b border-ocean-100 cursor-pointer transition-colors min-w-[100px]
                       ${!day.isCurrentMonth ? 'bg-gray-50' : 'hover:bg-ocean-50'}
                       ${day.isToday ? 'bg-pool-50 border-l-2 sm:border-l-4 border-l-pool-500' : ''}
                       select-none
                     `}
                   >
-                    <div className={`text-sm font-medium mb-1 ${
+                    <div className={`text-xs font-medium mb-1 ${
                       day.isToday 
                         ? 'text-pool-600 font-bold' 
                         : day.isCurrentMonth 
@@ -218,8 +220,10 @@ export function CalendarGrid({
                           : 'text-gray-400'
                     }`}>
                       <div className="flex items-center justify-between">
-                        <span>{format(day.date, 'd')}</span>
-                        <LeaderName date={day.dateString} />
+                        <span className={`${zoomLevel <= 0.8 ? 'text-xs' : 'text-sm'}`}>
+                          {format(day.date, 'd')}
+                        </span>
+                        {zoomLevel > 0.8 && <LeaderName date={day.dateString} />}
                       </div>
                     </div>
                     
@@ -238,43 +242,31 @@ export function CalendarGrid({
                         return (
                           <div
                             key={session.id}
-                            className={`${colorClass} rounded relative w-full flex items-center min-h-[24px]`}
+                            className={`${colorClass} rounded relative w-full flex items-center min-h-[20px] cursor-pointer`}
                             title={displayText} // ツールチップで全文表示
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              window.dispatchEvent(new CustomEvent('showDeleteDialog', { detail: session }));
+                            }}
+                            onTouchStart={(e) => {
+                              e.stopPropagation();
+                            }}
+                            onTouchEnd={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              window.dispatchEvent(new CustomEvent('showDeleteDialog', { detail: session }));
+                            }}
                           >
                             <div 
-                              className="flex-1 px-2 py-1 text-xs font-medium export-full-text cursor-pointer overflow-hidden whitespace-nowrap"
+                              className="flex-1 px-2 py-1 text-xs font-medium export-full-text overflow-hidden whitespace-nowrap"
                               style={{
                                 textOverflow: 'ellipsis'
                               }}
                               data-full-text={displayText}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                // メニュー編集機能があれば、ここで編集ダイアログを開く
-                              }}
                             >
                               {displayText}
                             </div>
-                            <button 
-                              className="w-6 h-full bg-red-500 hover:bg-red-600 text-white text-xs font-bold flex items-center justify-center rounded-r border-none cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                window.dispatchEvent(new CustomEvent('showDeleteDialog', { detail: session }));
-                              }}
-                              onTouchStart={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                              }}
-                              onTouchEnd={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                window.dispatchEvent(new CustomEvent('showDeleteDialog', { detail: session }));
-                              }}
-                              type="button"
-                              aria-label="削除"
-                            >
-                              ×
-                            </button>
                           </div>
                         );
                       })}
