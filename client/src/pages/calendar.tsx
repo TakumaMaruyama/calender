@@ -94,16 +94,6 @@ export default function Calendar() {
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
-      // カラーテスト用の鮮やかな色バーを画像上部に描画
-      ctx.fillStyle = '#FF0000'; // 赤
-      ctx.fillRect(0, 0, canvas.width / 4, 20);
-      ctx.fillStyle = '#00FF00'; // 緑
-      ctx.fillRect(canvas.width / 4, 0, canvas.width / 4, 20);
-      ctx.fillStyle = '#0000FF'; // 青
-      ctx.fillRect(canvas.width / 2, 0, canvas.width / 4, 20);
-      ctx.fillStyle = '#FFFF00'; // 黄色
-      ctx.fillRect((canvas.width * 3) / 4, 0, canvas.width / 4, 20);
-      
       // 画質設定
       ctx.imageSmoothingEnabled = true;
       if (ctx.imageSmoothingQuality) {
@@ -189,7 +179,6 @@ export default function Calendar() {
             }
 
             // セッションボックスを描画（より大きく）
-            console.log(`セッション色設定: ${bgColor} (タイプ: ${session.type})`);
             ctx.fillStyle = bgColor;
             ctx.fillRect(x + 6, sessionY - 18, cellWidth - 12, 24);
 
@@ -234,10 +223,8 @@ export default function Calendar() {
         console.log('リーダー情報の取得に失敗しました:', error);
       }
 
-      // 画像データをチェックしてカラー情報を確認
+      // 画像をダウンロード
       console.log('画像ダウンロード処理開始...');
-      const imageData = ctx.getImageData(0, 0, 100, 100);
-      console.log('画像データサンプル（最初の10ピクセル）:', Array.from(imageData.data.slice(0, 40)));
       
       canvas.toBlob((blob) => {
         if (!blob) {
