@@ -70,7 +70,18 @@ export default function Calendar() {
       
       console.log('キャンバス作成中...');
       const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      
+      // Canvas要素をDOMに一時的に追加してブラウザの描画エンジンを確実に使用
+      canvas.style.position = 'absolute';
+      canvas.style.left = '-9999px';
+      canvas.style.top = '-9999px';
+      document.body.appendChild(canvas);
+      
+      const ctx = canvas.getContext('2d', {
+        alpha: false,
+        desynchronized: false,
+        colorSpace: 'srgb'
+      });
       if (!ctx) {
         throw new Error('キャンバスコンテキストの取得に失敗しました');
       }
@@ -82,6 +93,16 @@ export default function Calendar() {
       // 背景を白で塗りつぶし
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // カラーテスト用の鮮やかな色バーを画像上部に描画
+      ctx.fillStyle = '#FF0000'; // 赤
+      ctx.fillRect(0, 0, canvas.width / 4, 20);
+      ctx.fillStyle = '#00FF00'; // 緑
+      ctx.fillRect(canvas.width / 4, 0, canvas.width / 4, 20);
+      ctx.fillStyle = '#0000FF'; // 青
+      ctx.fillRect(canvas.width / 2, 0, canvas.width / 4, 20);
+      ctx.fillStyle = '#FFFF00'; // 黄色
+      ctx.fillRect((canvas.width * 3) / 4, 0, canvas.width / 4, 20);
       
       // 画質設定
       ctx.imageSmoothingEnabled = true;
@@ -337,6 +358,9 @@ export default function Calendar() {
         setTimeout(() => {
           URL.revokeObjectURL(url);
         }, 10000);
+        
+        // Canvas要素をDOMから削除
+        document.body.removeChild(canvas);
         
       }, 'image/png'); // PNG形式でカラー出力
     } catch (error) {
