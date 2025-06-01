@@ -184,8 +184,12 @@ export class MemStorage implements IStorage {
   }
 
   private async initializeLeaderSchedule() {
-    // 既存のリーダースケジュールをクリア
-    this.leaderSchedules.clear();
+    // 既存のスケジュールがある場合はスキップ
+    if (this.leaderSchedules.size > 0) {
+      return;
+    }
+    
+    // 初回のみリーダースケジュールを作成
     this.currentLeaderScheduleId = 1;
 
     // リーダーリスト（元翔をID:10に設定）
