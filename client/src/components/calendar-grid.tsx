@@ -176,10 +176,15 @@ export function CalendarGrid({
                     const displayText = session.title || getTrainingTypeLabel(session.type || '');
                     const hasContent = displayText && displayText.trim() !== '';
                     
+                    // titleがある場合は無色、typeのみの場合は色付き
+                    const isCustomTitle = session.title && session.title.trim() !== '';
+                    const colorClass = isCustomTitle ? 'bg-transparent text-black' : 
+                                     (hasContent ? (session.type ? getTrainingTypeColor(session.type) + ' text-white' : 'bg-gray-500 text-white') : 'bg-gray-300 text-white');
+                    
                     return (
                       <div
                         key={session.id}
-                        className="bg-transparent text-black rounded relative w-full flex items-center min-h-[24px]"
+                        className={`${colorClass} rounded relative w-full flex items-center min-h-[24px]`}
                         title={displayText} // ツールチップで全文表示
                       >
                         <div 
