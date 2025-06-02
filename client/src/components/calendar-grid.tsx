@@ -219,11 +219,13 @@ export function CalendarGrid({
                           ? 'text-ocean-900' 
                           : 'text-gray-400'
                     }`}>
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-start justify-between">
                         <span className={`${zoomLevel <= 0.8 ? 'text-xs' : 'text-sm'}`}>
                           {format(day.date, 'd')}
                         </span>
-                        <LeaderName date={day.dateString} zoomLevel={zoomLevel} />
+                        <div className="absolute top-1 right-1">
+                          <LeaderName date={day.dateString} zoomLevel={zoomLevel} />
+                        </div>
                       </div>
                     </div>
                     
