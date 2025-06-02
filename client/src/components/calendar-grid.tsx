@@ -244,7 +244,7 @@ export function CalendarGrid({
                         return (
                           <div
                             key={session.id}
-                            className={`${colorClass} rounded relative w-full flex items-center min-h-[20px] cursor-pointer`}
+                            className={`${colorClass} rounded relative w-full flex items-center h-[20px] cursor-pointer`}
                             title={displayText} // ツールチップで全文表示
                             onClick={(e) => {
                               e.stopPropagation();
@@ -261,13 +261,13 @@ export function CalendarGrid({
                             }}
                           >
                             <div 
-                              className="flex-1 px-2 py-1 text-xs font-medium export-full-text overflow-hidden whitespace-nowrap"
+                              className="flex-1 px-2 py-1 text-xs font-medium export-full-text overflow-hidden whitespace-nowrap leading-none"
                               style={{
                                 textOverflow: 'ellipsis'
                               }}
                               data-full-text={displayText}
                             >
-                              {displayText}
+                              {displayText || '\u00A0'}
                             </div>
                           </div>
                         );
