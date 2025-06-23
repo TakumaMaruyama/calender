@@ -154,6 +154,10 @@ export default function Calendar() {
             const sessionY = y + 60 + sessionIndex * 30;
             const displayText = session.title || (session.type ? getTrainingTypeLabel(session.type) : '');
             
+            // 大会の場合は複数行対応
+            const isTournament = session.title?.includes('大会\n') || false;
+            const tournamentLines = isTournament && session.title ? session.title.split('\n') : [];
+            
             // セッションの背景色を設定（16進数で確実にカラー指定）
             let bgColor = '#6B7280';
             if (session.type) {
@@ -178,15 +182,30 @@ export default function Calendar() {
               }
             }
 
-            // セッションボックスを描画（より大きく）
-            ctx.fillStyle = bgColor;
-            ctx.fillRect(x + 6, sessionY - 18, cellWidth - 12, 24);
+            if (isTournament) {
+              // 大会の場合は3行分の高さでボックスを描画
+              ctx.fillStyle = 'transparent'; // 大会は背景透明
+              ctx.fillRect(x + 6, sessionY - 18, cellWidth - 12, 60);
 
-            // セッションテキストを描画（より大きく）
-            ctx.fillStyle = '#FFFFFF';
-            ctx.font = 'bold 14px Arial, sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText(displayText, x + 10, sessionY - 4);
+              // 各行のテキストを描画
+              ctx.fillStyle = '#000000'; // 黒色テキスト
+              ctx.font = 'bold 12px Arial, sans-serif';
+              ctx.textAlign = 'left';
+              
+              tournamentLines.forEach((line, lineIndex) => {
+                ctx.fillText(line, x + 10, sessionY - 4 + lineIndex * 16);
+              });
+            } else {
+              // 通常のセッションボックスを描画
+              ctx.fillStyle = bgColor;
+              ctx.fillRect(x + 6, sessionY - 18, cellWidth - 12, 24);
+
+              // セッションテキストを描画
+              ctx.fillStyle = '#FFFFFF';
+              ctx.font = 'bold 14px Arial, sans-serif';
+              ctx.textAlign = 'left';
+              ctx.fillText(displayText, x + 10, sessionY - 4);
+            }
           });
 
           // セッション数が3つを超える場合の表示

@@ -75,9 +75,9 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
 
   const createSessionMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      // 大会の場合は大会名をタイトルに含める
+      // 大会の場合は3行形式でタイトルを作成
       const finalTitle = data.title === "大会" && data.competitionName 
-        ? `大会: ${data.competitionName}`
+        ? `大会\n${data.competitionName}\n※練習は無し`
         : data.title;
 
       const requestData: any = {

@@ -235,6 +235,10 @@ export function CalendarGrid({
                         const displayText = session.title || getTrainingTypeLabel(session.type || '');
                         const hasContent = displayText && displayText.trim() !== '';
                         
+                        // 大会の場合は複数行表示
+                        const isTournament = session.title?.includes('大会\n') || false;
+                        const tournamentLines = isTournament && session.title ? session.title.split('\n') : [];
+                        
                         // titleがある場合は無色、typeのみの場合は色付き、空白も無色
                         const isCustomTitle = session.title && session.title.trim() !== '';
                         const isEmpty = !hasContent;
@@ -244,7 +248,7 @@ export function CalendarGrid({
                         return (
                           <div
                             key={session.id}
-                            className={`${colorClass} rounded relative w-full flex items-center h-[20px] cursor-pointer`}
+                            className={`${colorClass} rounded relative w-full flex items-center ${isTournament ? 'h-[60px]' : 'h-[20px]'} cursor-pointer`}
                             title={displayText} // ツールチップで全文表示
                             onClick={(e) => {
                               e.stopPropagation();
@@ -260,15 +264,25 @@ export function CalendarGrid({
                               window.dispatchEvent(new CustomEvent('showDeleteDialog', { detail: session }));
                             }}
                           >
-                            <div 
-                              className="flex-1 px-2 py-1 text-xs font-medium export-full-text overflow-hidden whitespace-nowrap leading-none"
-                              style={{
-                                textOverflow: 'ellipsis'
-                              }}
-                              data-full-text={displayText}
-                            >
-                              {displayText || '\u00A0'}
-                            </div>
+                            {isTournament ? (
+                              <div className="flex-1 px-2 py-1 text-xs font-medium export-full-text">
+                                {tournamentLines.map((line, index) => (
+                                  <div key={index} className="leading-tight">
+                                    {line}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div 
+                                className="flex-1 px-2 py-1 text-xs font-medium export-full-text overflow-hidden whitespace-nowrap leading-none"
+                                style={{
+                                  textOverflow: 'ellipsis'
+                                }}
+                                data-full-text={displayText}
+                              >
+                                {displayText || '\u00A0'}
+                              </div>
+                            )}
                           </div>
                         );
                       })}
