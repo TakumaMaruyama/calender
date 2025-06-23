@@ -183,17 +183,17 @@ export default function Calendar() {
             }
 
             if (isTournament) {
-              // 大会の場合は3行分の高さでボックスを描画
+              // 大会の場合は2行分の高さでボックスを描画（1行分上に移動）
               ctx.fillStyle = 'transparent'; // 大会は背景透明
-              ctx.fillRect(x + 6, sessionY - 18, cellWidth - 12, 60);
+              ctx.fillRect(x + 6, sessionY - 28, cellWidth - 12, 40);
 
-              // 各行のテキストを描画
+              // 各行のテキストを描画（1行分上に移動）
               ctx.fillStyle = '#000000'; // 黒色テキスト
               ctx.font = 'bold 12px Arial, sans-serif';
               ctx.textAlign = 'left';
               
               tournamentLines.forEach((line, lineIndex) => {
-                ctx.fillText(line, x + 10, sessionY - 4 + lineIndex * 16);
+                ctx.fillText(line, x + 10, sessionY - 14 + lineIndex * 14);
               });
             } else {
               // 通常のセッションボックスを描画

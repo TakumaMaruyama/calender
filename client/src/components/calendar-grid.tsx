@@ -248,7 +248,7 @@ export function CalendarGrid({
                         return (
                           <div
                             key={session.id}
-                            className={`${colorClass} rounded relative w-full flex items-center ${isTournament ? 'h-[60px]' : 'h-[20px]'} cursor-pointer`}
+                            className={`${colorClass} rounded relative w-full ${isTournament ? 'flex items-start h-[40px] pt-1' : 'flex items-center h-[20px]'} cursor-pointer`}
                             title={displayText} // ツールチップで全文表示
                             onClick={(e) => {
                               e.stopPropagation();
