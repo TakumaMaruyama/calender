@@ -235,8 +235,8 @@ export function CalendarGrid({
                         const displayText = session.title || getTrainingTypeLabel(session.type || '');
                         const hasContent = displayText && displayText.trim() !== '';
                         
-                        // 大会の場合は複数行表示
-                        const isTournament = session.title?.includes('大会\n') || false;
+                        // 大会の場合は複数行表示（※練習は無しが含まれる場合）
+                        const isTournament = session.title?.includes('※練習は無し') || false;
                         const tournamentLines = isTournament && session.title ? session.title.split('\n') : [];
                         
                         // titleがある場合は無色、typeのみの場合は色付き、空白も無色

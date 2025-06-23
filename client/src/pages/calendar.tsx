@@ -154,8 +154,8 @@ export default function Calendar() {
             const sessionY = y + 60 + sessionIndex * 30;
             const displayText = session.title || (session.type ? getTrainingTypeLabel(session.type) : '');
             
-            // 大会の場合は複数行対応
-            const isTournament = session.title?.includes('大会\n') || false;
+            // 大会の場合は複数行対応（※練習は無しが含まれる場合）
+            const isTournament = session.title?.includes('※練習は無し') || false;
             const tournamentLines = isTournament ? (session.title || '').split('\n') : [];
             
             // セッションの背景色を設定（16進数で確実にカラー指定）

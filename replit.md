@@ -104,6 +104,7 @@ The application uses four main tables:
 ```
 Changelog:
 - June 23, 2025. Initial setup
+- June 23, 2025. Updated tournament display format to 2-line format: tournament name + "※練習は無し"
 ```
 
 ## User Preferences
