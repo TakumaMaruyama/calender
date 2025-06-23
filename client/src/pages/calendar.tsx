@@ -156,7 +156,7 @@ export default function Calendar() {
             
             // 大会の場合は複数行対応
             const isTournament = session.title?.includes('大会\n') || false;
-            const tournamentLines = isTournament && session.title ? session.title.split('\n') : [];
+            const tournamentLines = isTournament ? (session.title || '').split('\n') : [];
             
             // セッションの背景色を設定（16進数で確実にカラー指定）
             let bgColor = '#6B7280';
