@@ -56,13 +56,7 @@ export default function Calendar() {
     setIsLeaderModalOpen(true);
   };
 
-  const handleMonthChange = (direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      setCurrentDate(subMonths(currentDate, 1));
-    } else {
-      setCurrentDate(addMonths(currentDate, 1));
-    }
-  };
+
 
   const handleNewTraining = () => {
     setSelectedDate(null);
@@ -462,7 +456,6 @@ export default function Calendar() {
           trainingSessions={trainingSessions || []}
           onDateClick={handleDateClick}
           onLeaderSet={handleLeaderSet}
-          onMonthChange={handleMonthChange}
           isLoading={isLoading}
         />
       </div>
