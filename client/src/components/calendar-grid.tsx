@@ -35,8 +35,8 @@ export function CalendarGrid({
   const [isScrolling, setIsScrolling] = useState(false);
   const calendarDays = generateCalendarDays(currentDate);
 
-  // Zoom levels: 0.6 (zoomed out for landscape mobile), 0.8, 1 (default), 1.2, 1.5
-  const zoomLevels = [0.6, 0.8, 1, 1.2, 1.5];
+  // Zoom levels: 0.3 (30%), 0.5, 0.6, 0.8, 1 (default), 1.2, 1.5
+  const zoomLevels = [0.3, 0.5, 0.6, 0.8, 1, 1.2, 1.5];
   
   const zoomIn = () => {
     const currentIndex = zoomLevels.indexOf(zoomLevel);
