@@ -142,33 +142,6 @@ export function CalendarGrid({
 
   return (
     <div className="w-full">
-      {/* Zoom Controls */}
-      <div className="flex justify-center items-center gap-2 mb-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={zoomOut}
-          disabled={zoomLevel <= zoomLevels[0]}
-          className="flex items-center gap-1"
-        >
-          <ZoomOut className="h-4 w-4" />
-          縮小
-        </Button>
-        <span className="text-sm text-gray-600 min-w-[60px] text-center">
-          {Math.round(zoomLevel * 100)}%
-        </span>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={zoomIn}
-          disabled={zoomLevel >= zoomLevels[zoomLevels.length - 1]}
-          className="flex items-center gap-1"
-        >
-          <ZoomIn className="h-4 w-4" />
-          拡大
-        </Button>
-      </div>
-      
       <div className="w-full overflow-auto">
         <div 
           style={{ 
@@ -301,6 +274,33 @@ export function CalendarGrid({
             </div>
           </Card>
         </div>
+      </div>
+      
+      {/* Zoom Controls */}
+      <div className="flex justify-center items-center gap-2 mt-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={zoomOut}
+          disabled={zoomLevel <= zoomLevels[0]}
+          className="flex items-center gap-1"
+        >
+          <ZoomOut className="h-4 w-4" />
+          縮小
+        </Button>
+        <span className="text-sm text-gray-600 min-w-[60px] text-center">
+          {Math.round(zoomLevel * 100)}%
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={zoomIn}
+          disabled={zoomLevel >= zoomLevels[zoomLevels.length - 1]}
+          className="flex items-center gap-1"
+        >
+          <ZoomIn className="h-4 w-4" />
+          拡大
+        </Button>
       </div>
     </div>
   );
