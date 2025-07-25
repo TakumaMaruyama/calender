@@ -13,6 +13,7 @@ interface CalendarGridProps {
   trainingSessions: TrainingSession[];
   onDateClick: (dateString: string) => void;
   onLeaderSet?: (dateString: string) => void;
+  onMonthChange?: (direction: 'prev' | 'next') => void;
   isLoading: boolean;
 }
 
@@ -21,6 +22,7 @@ export function CalendarGrid({
   trainingSessions, 
   onDateClick, 
   onLeaderSet,
+  onMonthChange,
   isLoading 
 }: CalendarGridProps) {
   const [longPressTimeout, setLongPressTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -28,6 +30,9 @@ export function CalendarGrid({
   const [touchStartPos, setTouchStartPos] = useState({ x: 0, y: 0 });
   const [hasMoved, setHasMoved] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [swipeStartX, setSwipeStartX] = useState(0);
+  const [swipeStartY, setSwipeStartY] = useState(0);
+  const [isScrolling, setIsScrolling] = useState(false);
   const calendarDays = generateCalendarDays(currentDate);
 
   // Zoom levels: 0.6 (zoomed out for landscape mobile), 0.8, 1 (default), 1.2, 1.5
@@ -122,6 +127,53 @@ export function CalendarGrid({
     setIsLongPress(false);
   };
 
+  // Container-level swipe handlers for month navigation
+  const handleContainerTouchStart = (event: React.TouchEvent) => {
+    const touch = event.touches[0];
+    setSwipeStartX(touch.clientX);
+    setSwipeStartY(touch.clientY);
+    setIsScrolling(false);
+  };
+
+  const handleContainerTouchMove = (event: React.TouchEvent) => {
+    if (!swipeStartX || !swipeStartY) return;
+    
+    const touch = event.touches[0];
+    const deltaX = Math.abs(touch.clientX - swipeStartX);
+    const deltaY = Math.abs(touch.clientY - swipeStartY);
+    
+    // If vertical movement is greater than horizontal, it's likely a scroll
+    if (deltaY > deltaX && deltaY > 30) {
+      setIsScrolling(true);
+    }
+  };
+
+  const handleContainerTouchEnd = (event: React.TouchEvent) => {
+    if (!swipeStartX || !swipeStartY || isScrolling) {
+      setSwipeStartX(0);
+      setSwipeStartY(0);
+      setIsScrolling(false);
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - swipeStartX;
+    const deltaY = Math.abs(touch.clientY - swipeStartY);
+    
+    // Only trigger month change if horizontal swipe is significant and vertical movement is minimal
+    if (Math.abs(deltaX) > 50 && deltaY < 100 && onMonthChange) {
+      if (deltaX > 0) {
+        onMonthChange('prev'); // Swipe right = previous month
+      } else {
+        onMonthChange('next'); // Swipe left = next month
+      }
+    }
+
+    setSwipeStartX(0);
+    setSwipeStartY(0);
+    setIsScrolling(false);
+  };
+
   if (isLoading) {
     return (
       <Card className="bg-white rounded-xl shadow-sm border border-ocean-100 overflow-hidden">
@@ -166,7 +218,12 @@ export function CalendarGrid({
         </Button>
       </div>
       
-      <div className="w-full overflow-auto">
+      <div 
+        className="w-full overflow-auto"
+        onTouchStart={handleContainerTouchStart}
+        onTouchMove={handleContainerTouchMove}
+        onTouchEnd={handleContainerTouchEnd}
+      >
         <div 
           style={{ 
             transform: `scale(${zoomLevel})`,
