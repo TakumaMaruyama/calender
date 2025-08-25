@@ -234,6 +234,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/leaders/sync", async (req, res) => {
+    try {
+      const { leaders } = req.body;
+      console.log("リーダー同期リクエスト:", leaders);
+      await storage.syncLeaders(leaders);
+      res.status(200).json({ message: "リーダーリストを同期しました" });
+    } catch (error) {
+      res.status(500).json({ error: error instanceof Error ? error.message : "リーダー同期に失敗しました" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

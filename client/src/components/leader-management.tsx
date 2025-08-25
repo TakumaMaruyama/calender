@@ -54,10 +54,28 @@ export function LeaderManagement() {
     }
   }, []);
 
-  // リーダーリストが変更されたらローカルストレージに保存
+  // データベースと同期する関数
+  const syncWithDatabase = async (leaderList: Leader[]) => {
+    try {
+      await fetch('/api/leaders/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ leaders: leaderList }),
+      });
+      console.log('リーダーリストをデータベースと同期しました');
+    } catch (error) {
+      console.error('データベース同期エラー:', error);
+    }
+  };
+
+  // リーダーリストが変更されたらローカルストレージに保存し、データベースと同期
   useEffect(() => {
     if (leaders.length > 0) {
       localStorage.setItem('scheduler-leaders', JSON.stringify(leaders));
+      // データベースと同期
+      syncWithDatabase(leaders);
     }
   }, [leaders]);
 

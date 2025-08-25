@@ -58,24 +58,43 @@ export class DatabaseStorage implements IStorage {
     try {
       // Check if data already exists
       const existingSwimmers = await this.getAllSwimmers();
-      if (existingSwimmers.length > 0) {
-        return; // Data already exists, skip initialization
+      if (existingSwimmers.length >= 16) {
+        return; // Leaders already initialized, skip initialization
       }
 
-      // Add sample swimmers
-      await this.createSwimmer({
-        name: "田中太郎",
-        email: "tanaka@example.com",
-        lane: 1,
-        level: "intermediate"
-      });
+      // デフォルトのリーダーリストで初期化
+      const defaultLeaders = [
+        { id: 1, name: "ののか" },
+        { id: 2, name: "有理" },
+        { id: 3, name: "龍之介" },
+        { id: 4, name: "彩音" },
+        { id: 5, name: "勘太" },
+        { id: 6, name: "悠喜" },
+        { id: 7, name: "佳翔" },
+        { id: 8, name: "春舞" },
+        { id: 9, name: "滉介" },
+        { id: 10, name: "元翔" },
+        { id: 11, name: "百華" },
+        { id: 12, name: "澪心" },
+        { id: 13, name: "礼志" },
+        { id: 14, name: "桔伊" },
+        { id: 15, name: "虹日" },
+        { id: 16, name: "弥広" }
+      ];
 
-      await this.createSwimmer({
-        name: "佐藤花子",
-        email: "sato@example.com",
-        lane: 2,
-        level: "advanced"
-      });
+      // リーダーを追加
+      for (const leader of defaultLeaders) {
+        await db
+          .insert(swimmers)
+          .values({
+            id: leader.id,
+            name: leader.name,
+            level: "intermediate",
+            email: null,
+            lane: null
+          })
+          .onConflictDoNothing(); // 既存データがあれば無視
+      }
 
       // リーダースケジュールを初期化（6月2日から元翔でスタート）
       await this.initializeLeaderSchedule();
@@ -554,26 +573,8 @@ export class DatabaseStorage implements IStorage {
     }
 
     const schedule = schedules[0];
-    const swimmers = [
-      { id: 1, name: "ののか", order: 1 },
-      { id: 2, name: "有理", order: 2 },
-      { id: 3, name: "龍之介", order: 3 },
-      { id: 4, name: "彩音", order: 4 },
-      { id: 5, name: "勘太", order: 5 },
-      { id: 6, name: "悠喜", order: 6 },
-      { id: 7, name: "佳翔", order: 7 },
-      { id: 8, name: "春舞", order: 8 },
-      { id: 9, name: "滉介", order: 9 },
-      { id: 10, name: "元翔", order: 10 },
-      { id: 11, name: "百華", order: 11 },
-      { id: 12, name: "澪心", order: 12 },
-      { id: 13, name: "礼志", order: 13 },
-      { id: 14, name: "桔伊", order: 14 },
-      { id: 15, name: "虹日", order: 15 },
-      { id: 16, name: "弥広", order: 16 }
-    ];
-
-    const swimmer = swimmers.find(s => s.id === schedule.swimmerId);
+    // クライアント側から動的にリーダーリストを取得する代わりに、データベースから取得
+    const swimmer = await this.getSwimmer(schedule.swimmerId);
     return swimmer ? { name: swimmer.name } : null;
   }
 
@@ -623,6 +624,35 @@ export class DatabaseStorage implements IStorage {
       endDate: date,
       isActive: true
     });
+  }
+
+  async syncLeaders(leaders: { id: number; name: string; order: number; }[]): Promise<void> {
+    // すべての既存スイマーを取得
+    const existingSwimmers = await this.getAllSwimmers();
+    
+    // リーダーリストの各項目を処理
+    for (const leader of leaders) {
+      // 名前でマッチするスイマーを探す
+      const existingSwimmer = existingSwimmers.find(swimmer => swimmer.name === leader.name);
+      
+      if (!existingSwimmer) {
+        // 新しいスイマーを作成（フロントエンドのIDを使用）
+        const newSwimmer = await db
+          .insert(swimmers)
+          .values({
+            id: leader.id,
+            name: leader.name,
+            level: "intermediate",
+            email: null,
+            lane: null
+          })
+          .onConflictDoUpdate({
+            target: swimmers.id,
+            set: { name: leader.name }
+          })
+          .returning();
+      }
+    }
   }
 }
 
