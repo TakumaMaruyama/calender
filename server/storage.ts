@@ -609,6 +609,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async setLeaderForDate(date: string, leaderId: number, leaders?: { id: number; name: string; order: number; }[]): Promise<void> {
+    // リーダーが存在するか確認し、存在しない場合は同期する
+    if (leaders) {
+      await this.syncLeaders(leaders);
+    }
+
+    // リーダーが存在するか確認
+    const leader = await this.getSwimmer(leaderId);
+    if (!leader) {
+      throw new Error(`リーダーID ${leaderId} が見つかりません。リーダーが正しく登録されているか確認してください。`);
+    }
+
     // 既存のスケジュールを無効化
     await db.update(leaderSchedule)
       .set({ isActive: false })
@@ -632,25 +643,52 @@ export class DatabaseStorage implements IStorage {
     
     // リーダーリストの各項目を処理
     for (const leader of leaders) {
-      // 名前でマッチするスイマーを探す
-      const existingSwimmer = existingSwimmers.find(swimmer => swimmer.name === leader.name);
-      
-      if (!existingSwimmer) {
-        // 新しいスイマーを作成（フロントエンドのIDを使用）
-        const newSwimmer = await db
-          .insert(swimmers)
-          .values({
-            id: leader.id,
-            name: leader.name,
-            level: "intermediate",
-            email: null,
-            lane: null
-          })
-          .onConflictDoUpdate({
-            target: swimmers.id,
-            set: { name: leader.name }
-          })
-          .returning();
+      try {
+        // 名前でマッチするスイマーを探す
+        const existingSwimmer = existingSwimmers.find(swimmer => swimmer.name === leader.name);
+        
+        if (!existingSwimmer) {
+          // 新しいスイマーを作成
+          await db
+            .insert(swimmers)
+            .values({
+              id: leader.id,
+              name: leader.name,
+              level: "intermediate",
+              email: null,
+              lane: null
+            })
+            .onConflictDoUpdate({
+              target: swimmers.id,
+              set: { 
+                name: leader.name,
+                level: "intermediate"
+              }
+            });
+        } else if (existingSwimmer.id !== leader.id) {
+          // IDが異なる場合は、フロントエンドのIDに合わせる
+          // まず古いIDのデータを削除してから新しいIDで作成
+          await db.delete(swimmers).where(eq(swimmers.id, existingSwimmer.id));
+          await db
+            .insert(swimmers)
+            .values({
+              id: leader.id,
+              name: leader.name,
+              level: existingSwimmer.level || "intermediate",
+              email: existingSwimmer.email,
+              lane: existingSwimmer.lane
+            })
+            .onConflictDoUpdate({
+              target: swimmers.id,
+              set: { 
+                name: leader.name,
+                level: existingSwimmer.level || "intermediate"
+              }
+            });
+        }
+      } catch (error) {
+        console.error(`リーダー同期エラー (${leader.name}):`, error);
+        // 同期に失敗した個別のリーダーがあっても続行
       }
     }
   }
