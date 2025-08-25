@@ -82,7 +82,9 @@ export function LeaderManagement() {
   // リーダー追加（最後に追加）
   const addLeaderMutation = useMutation({
     mutationFn: async (name: string) => {
-      const newLeader = { id: Date.now(), name, order: leaders.length + 1 };
+      // 既存の最大IDを取得して+1（安全な範囲で）
+      const maxId = leaders.length > 0 ? Math.max(...leaders.map(l => l.id)) : 16;
+      const newLeader = { id: maxId + 1, name, order: leaders.length + 1 };
       setLeaders(prev => [...prev, newLeader]);
       return newLeader;
     },
@@ -170,7 +172,9 @@ export function LeaderManagement() {
 
   // 特定位置に挿入
   const insertAt = (name: string, position: number) => {
-    const newLeader = { id: Date.now(), name: name.trim(), order: position };
+    // 既存の最大IDを取得して+1
+    const maxId = leaders.length > 0 ? Math.max(...leaders.map(l => l.id)) : 16;
+    const newLeader = { id: maxId + 1, name: name.trim(), order: position };
     setLeaders(prev => {
       const sortedLeaders = [...prev].sort((a, b) => a.order - b.order);
       // 挿入位置以降のorderを1つずつ増加
