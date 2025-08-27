@@ -659,85 +659,71 @@ export class DatabaseStorage implements IStorage {
     console.log(`Generated ${scheduleCount} schedules successfully`);
   }
 
-  async setLeaderForDate(date: string, leaderId: number, leaders?: { id: number; name: string; order: number; }[]): Promise<void> {
-    console.log(`setLeaderForDate called with date: ${date}, leaderId: ${leaderId}`);
+  async setLeaderForDate(date: string, leaderId: number): Promise<void> {
+    console.log(`シンプルリーダー設定: ${date}, leaderId: ${leaderId}`);
     
-    // リーダーが存在するか確認し、存在しない場合は同期する
-    if (leaders) {
-      await this.syncLeaders(leaders);
-    }
-
-    // リーダーが存在するか確認
-    const leader = await this.getSwimmer(leaderId);
-    if (!leader) {
-      throw new Error(`リーダーID ${leaderId} が見つかりません。リーダーが正しく登録されているか確認してください。`);
-    }
-
-    if (!leaders) {
-      throw new Error('リーダーリストが提供されていません');
-    }
-
-    // 指定された日付以降の全てのスケジュールを削除
-    console.log(`Deleting all schedules from ${date} onwards`);
-    const deleteResult = await db.delete(leaderSchedule)
-      .where(gte(leaderSchedule.startDate, date));
-    console.log(`Deleted schedules:`, deleteResult);
-
-    // リーダーリストを順序でソート
-    const sortedLeaders = leaders.sort((a, b) => a.order - b.order);
-    console.log(`Sorted leaders:`, sortedLeaders.map(l => ({ id: l.id, name: l.name, order: l.order })));
+    // 全リーダーをIDの順序で取得（1-18）
+    const allLeaders = await db.select().from(swimmers)
+      .where(
+        and(
+          gte(swimmers.id, 1),
+          lte(swimmers.id, 18)
+        )
+      )
+      .orderBy(swimmers.id);
     
-    // 選択されたリーダーの順序インデックスを取得
-    const selectedLeaderIndex = sortedLeaders.findIndex(l => l.id === leaderId);
-    if (selectedLeaderIndex === -1) {
-      throw new Error(`選択されたリーダーがリストに見つかりません: ${leaderId}`);
+    console.log('全リーダー:', allLeaders.map(l => `${l.id}:${l.name}`));
+    
+    if (allLeaders.length !== 18) {
+      throw new Error(`18人のリーダーが必要です。現在: ${allLeaders.length}人`);
     }
-    console.log(`Selected leader index: ${selectedLeaderIndex}`);
-
-    // 指定された日付を3日サイクルの開始日に調整
-    const targetDate = new Date(date);
-    const daysSinceStart = Math.floor((targetDate.getTime() - new Date('2025-08-01').getTime()) / (1000 * 60 * 60 * 24));
-    const cycleIndex = Math.floor(daysSinceStart / 3);
-    const cycleStartDate = new Date('2025-08-01');
-    cycleStartDate.setDate(cycleStartDate.getDate() + (cycleIndex * 3));
-    console.log(`Adjusted cycle start date: ${cycleStartDate.toISOString().split('T')[0]}`);
-
-    // 指定された日付から6ヶ月先まで完全なローテーションを生成
-    const endDate = new Date(cycleStartDate);
+    
+    // 選択されたリーダーのインデックス
+    const selectedIndex = allLeaders.findIndex(l => l.id === leaderId);
+    if (selectedIndex === -1) {
+      throw new Error(`リーダーID ${leaderId} が見つかりません`);
+    }
+    
+    console.log(`選択リーダーインデックス: ${selectedIndex} (${allLeaders[selectedIndex].name})`);
+    
+    // 指定日以降を全削除
+    await db.delete(leaderSchedule).where(gte(leaderSchedule.startDate, date));
+    
+    // 指定日から3日サイクルに調整
+    const startDate = new Date(date);
+    const daysSince = Math.floor((startDate.getTime() - new Date('2025-08-01').getTime()) / (1000 * 60 * 60 * 24));
+    const cycleStart = new Date('2025-08-01');
+    cycleStart.setDate(cycleStart.getDate() + Math.floor(daysSince / 3) * 3);
+    
+    console.log(`サイクル開始日: ${cycleStart.toISOString().split('T')[0]}`);
+    
+    // 6ヶ月分のローテーション生成
+    const endDate = new Date(cycleStart);
     endDate.setMonth(endDate.getMonth() + 6);
-    console.log(`Generating rotation until: ${endDate.toISOString().split('T')[0]}`);
-
-    let currentDate = new Date(cycleStartDate);
-    let leaderIndex = selectedLeaderIndex;
-    let scheduleCount = 0;
-
-    while (currentDate <= endDate && scheduleCount < 200) { // 安全な上限設定
-      const currentLeader = sortedLeaders[leaderIndex];
+    
+    let currentDate = new Date(cycleStart);
+    let leaderIndex = selectedIndex;
+    
+    while (currentDate <= endDate) {
+      const leader = allLeaders[leaderIndex];
+      const scheduleEnd = new Date(currentDate);
+      scheduleEnd.setDate(scheduleEnd.getDate() + 2);
       
-      // 3日間のスケジュール期間を計算
-      const scheduleEndDate = new Date(currentDate);
-      scheduleEndDate.setDate(scheduleEndDate.getDate() + 2);
-
-      console.log(`Creating schedule ${scheduleCount + 1}: ${currentLeader.name} (${currentDate.toISOString().split('T')[0]} - ${scheduleEndDate.toISOString().split('T')[0]})`);
-
-      // 新しいスケジュールを作成
+      console.log(`${leader.name}: ${currentDate.toISOString().split('T')[0]} - ${scheduleEnd.toISOString().split('T')[0]}`);
+      
       await this.createLeaderSchedule({
-        swimmerId: currentLeader.id,
+        swimmerId: leader.id,
         startDate: currentDate.toISOString().split('T')[0],
-        endDate: scheduleEndDate.toISOString().split('T')[0],
+        endDate: scheduleEnd.toISOString().split('T')[0],
         isActive: true
       });
-
-      scheduleCount++;
       
-      // 次のリーダーに移動（循環）
-      leaderIndex = (leaderIndex + 1) % sortedLeaders.length;
-      
-      // 次の3日間に移動
+      // 次のリーダー（1→2→...→18→1の順序）
+      leaderIndex = (leaderIndex + 1) % 18;
       currentDate.setDate(currentDate.getDate() + 3);
     }
     
-    console.log(`Generated ${scheduleCount} schedules for complete rotation`);
+    console.log('ローテーション完了');
   }
 
   async syncLeaders(leaders: { id: number; name: string; order: number; }[]): Promise<void> {
