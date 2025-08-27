@@ -87,9 +87,11 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
       // 全てのリーダー関連クエリを無効化
       queryClient.invalidateQueries({ queryKey: ["/api/leaders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/leader"] });
-      // 個別の日付クエリも全て無効化
-      queryClient.removeQueries({ queryKey: ["/api/leader"], exact: false });
-      queryClient.refetchQueries({ queryKey: ["/api/leader"], exact: false });
+      // 既存のキャッシュを完全に削除
+      queryClient.removeQueries({ queryKey: ["/api/leader"] });
+      queryClient.clear(); // 全てのキャッシュをクリア
+      // ページを再読み込みして新しいデータを取得
+      window.location.reload();
       onClose();
       setSelectedLeaderId("");
     },
