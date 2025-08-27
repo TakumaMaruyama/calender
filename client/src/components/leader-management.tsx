@@ -30,7 +30,7 @@ export function LeaderManagement() {
     if (savedLeaders) {
       setLeaders(JSON.parse(savedLeaders));
     } else {
-      // 初期データ（あなたの16人のリーダーリスト）
+      // 初期データ（リーダーリスト）
       const defaultLeaders = [
         { id: 1, name: "ののか", order: 1 },
         { id: 2, name: "有理", order: 2 },
@@ -47,7 +47,9 @@ export function LeaderManagement() {
         { id: 13, name: "礼志", order: 13 },
         { id: 14, name: "桔伊", order: 14 },
         { id: 15, name: "虹日", order: 15 },
-        { id: 16, name: "弥広", order: 16 }
+        { id: 16, name: "弥広", order: 16 },
+        { id: 17, name: "侑来", order: 17 },
+        { id: 18, name: "仁幌", order: 18 }
       ];
       setLeaders(defaultLeaders);
       localStorage.setItem('scheduler-leaders', JSON.stringify(defaultLeaders));

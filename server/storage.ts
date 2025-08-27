@@ -620,21 +620,52 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`リーダーID ${leaderId} が見つかりません。リーダーが正しく登録されているか確認してください。`);
     }
 
-    // 既存のスケジュールを無効化
-    await db.update(leaderSchedule)
-      .set({ isActive: false })
-      .where(and(
-        lte(leaderSchedule.startDate, date),
-        gte(leaderSchedule.endDate, date)
-      ));
+    // 指定された日付以降の既存スケジュールを削除
+    await db.delete(leaderSchedule)
+      .where(gte(leaderSchedule.startDate, date));
 
-    // 新しいスケジュールを作成
-    await this.createLeaderSchedule({
-      swimmerId: leaderId,
-      startDate: date,
-      endDate: date,
-      isActive: true
-    });
+    // リーダーリストを取得し、選択されたリーダーから始まるローテーションを生成
+    if (!leaders) {
+      throw new Error('リーダーリストが提供されていません');
+    }
+
+    // 選択されたリーダーの順序を見つける
+    const sortedLeaders = leaders.sort((a, b) => a.order - b.order);
+    const selectedLeaderIndex = sortedLeaders.findIndex(l => l.id === leaderId);
+    
+    if (selectedLeaderIndex === -1) {
+      throw new Error(`選択されたリーダーがリストに見つかりません: ${leaderId}`);
+    }
+
+    // 指定された日付から3日間制でローテーションを生成（6ヶ月先まで）
+    const startDate = new Date(date);
+    const endDate = new Date(startDate);
+    endDate.setMonth(endDate.getMonth() + 6); // 6ヶ月先まで
+
+    let currentDate = new Date(startDate);
+    let leaderIndex = selectedLeaderIndex;
+
+    while (currentDate <= endDate) {
+      const currentLeader = sortedLeaders[leaderIndex];
+      
+      // 3日間のスケジュールを作成（月〜水、金〜日）
+      const scheduleEndDate = new Date(currentDate);
+      scheduleEndDate.setDate(scheduleEndDate.getDate() + 2); // 3日間
+
+      // 新しいスケジュールを作成
+      await this.createLeaderSchedule({
+        swimmerId: currentLeader.id,
+        startDate: currentDate.toISOString().split('T')[0],
+        endDate: scheduleEndDate.toISOString().split('T')[0],
+        isActive: true
+      });
+
+      // 次のリーダーに移動（循環）
+      leaderIndex = (leaderIndex + 1) % sortedLeaders.length;
+
+      // 次の3日間に移動
+      currentDate.setDate(currentDate.getDate() + 3);
+    }
   }
 
   async syncLeaders(leaders: { id: number; name: string; order: number; }[]): Promise<void> {
