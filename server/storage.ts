@@ -198,7 +198,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteSwimmer(id: number): Promise<boolean> {
     const result = await db.delete(swimmers).where(eq(swimmers.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Training Sessions
@@ -517,7 +517,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteTrainingSession(id: number): Promise<boolean> {
     const result = await db.delete(trainingSessions).where(eq(trainingSessions.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async deleteFutureTrainingSessions(id: number): Promise<boolean> {
@@ -531,7 +531,7 @@ export class DatabaseStorage implements IStorage {
         eq(trainingSessions.startTime, session.startTime)
       ));
     
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Attendance
@@ -601,7 +601,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteLeaderSchedule(id: number): Promise<boolean> {
     const result = await db.delete(leaderSchedule).where(eq(leaderSchedule.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async generateLeaderSchedule(startDate: string, swimmersList: Swimmer[]): Promise<void> {

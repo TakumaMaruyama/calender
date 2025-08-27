@@ -79,7 +79,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid session ID" });
       }
 
-      const validatedData = insertTrainingSessionSchema.partial().parse(req.body);
+      const updateSchema = insertTrainingSessionSchema.omit({ title: true, type: true }).extend({
+        title: z.string().optional(),
+        type: z.string().optional()
+      }).partial();
+      const validatedData = updateSchema.parse(req.body);
       const session = await storage.updateTrainingSession(id, validatedData);
       
       if (!session) {
