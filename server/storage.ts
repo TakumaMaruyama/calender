@@ -605,7 +605,58 @@ export class DatabaseStorage implements IStorage {
   }
 
   async generateLeaderSchedule(startDate: string, swimmersList: Swimmer[]): Promise<void> {
-    // Implementation for generating leader schedule
+    console.log("Starting generateLeaderSchedule with:", { startDate, swimmerCount: swimmersList.length });
+    
+    // 既存のスケジュールを削除
+    const deleteResult = await db.delete(leaderSchedule)
+      .where(gte(leaderSchedule.startDate, startDate));
+    console.log("Deleted existing schedules:", deleteResult);
+
+    // スイマーリストをID順にソート
+    const sortedSwimmers = swimmersList.sort((a, b) => a.id - b.id);
+    console.log("Sorted swimmers:", sortedSwimmers.map(s => ({ id: s.id, name: s.name })));
+    
+    // 開始日から6ヶ月先まで3日制ローテーションを生成
+    const start = new Date(startDate);
+    const endDate = new Date(start);
+    endDate.setMonth(endDate.getMonth() + 6);
+    console.log("Date range:", { start: start.toISOString(), end: endDate.toISOString() });
+
+    let currentDate = new Date(start);
+    let swimmerIndex = 0;
+    let scheduleCount = 0;
+
+    while (currentDate <= endDate) {
+      const currentSwimmer = sortedSwimmers[swimmerIndex];
+      console.log(`Creating schedule ${scheduleCount + 1}: swimmer ${currentSwimmer.name} (id: ${currentSwimmer.id}) from ${currentDate.toISOString().split('T')[0]}`);
+      
+      // 3日間のスケジュールを作成
+      const scheduleEndDate = new Date(currentDate);
+      scheduleEndDate.setDate(scheduleEndDate.getDate() + 2); // 3日間
+
+      try {
+        // 新しいスケジュールを作成
+        const newSchedule = await this.createLeaderSchedule({
+          swimmerId: currentSwimmer.id,
+          startDate: currentDate.toISOString().split('T')[0],
+          endDate: scheduleEndDate.toISOString().split('T')[0],
+          isActive: true
+        });
+        console.log("Created schedule:", newSchedule);
+        scheduleCount++;
+      } catch (error) {
+        console.error("Error creating schedule:", error);
+        throw error;
+      }
+
+      // 次のスイマーに移動（循環）
+      swimmerIndex = (swimmerIndex + 1) % sortedSwimmers.length;
+
+      // 次の3日間に移動
+      currentDate.setDate(currentDate.getDate() + 3);
+    }
+    
+    console.log(`Generated ${scheduleCount} schedules successfully`);
   }
 
   async setLeaderForDate(date: string, leaderId: number, leaders?: { id: number; name: string; order: number; }[]): Promise<void> {

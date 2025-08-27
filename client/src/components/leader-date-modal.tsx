@@ -61,7 +61,9 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
           { id: 13, name: "礼志", order: 13 },
           { id: 14, name: "桔伊", order: 14 },
           { id: 15, name: "虹日", order: 15 },
-          { id: 16, name: "弥広", order: 16 }
+          { id: 16, name: "弥広", order: 16 },
+          { id: 17, name: "侑来", order: 17 },
+          { id: 18, name: "仁幌", order: 18 }
         ];
         setLeaders(defaultLeaders);
       }
@@ -82,8 +84,12 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
         title: "リーダーを設定しました",
         description: `${selectedDate}からのローテーションが開始されます`,
       });
+      // 全てのリーダー関連クエリを無効化
       queryClient.invalidateQueries({ queryKey: ["/api/leaders"] });
       queryClient.invalidateQueries({ queryKey: ["/api/leader"] });
+      // 個別の日付クエリも全て無効化
+      queryClient.removeQueries({ queryKey: ["/api/leader"], exact: false });
+      queryClient.refetchQueries({ queryKey: ["/api/leader"], exact: false });
       onClose();
       setSelectedLeaderId("");
     },

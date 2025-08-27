@@ -308,8 +308,6 @@ export function CalendarGrid({
 
 // リーダー名表示コンポーネント（APIからリーダー情報を取得）
 function LeaderName({ date, zoomLevel }: { date: string; zoomLevel: number }) {
-  const [leader, setLeader] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const targetDate = new Date(date);
   const dayOfWeek = targetDate.getDay();
   
@@ -318,37 +316,34 @@ function LeaderName({ date, zoomLevel }: { date: string; zoomLevel: number }) {
     return null;
   }
 
-  useEffect(() => {
-    setIsLoading(true);
-    // APIからその日のリーダー情報を取得
-    fetch(`/api/leader/${date}`)
-      .then(res => {
-        if (res.ok) {
-          return res.json();
+  const { data: leaderData, isLoading, error } = useQuery({
+    queryKey: ["/api/leader", date],
+    queryFn: async () => {
+      const response = await fetch(`/api/leader/${date}`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null; // リーダーが設定されていない場合
         }
-        return null;
-      })
-      .then(data => {
-        if (data && data.name) {
-          setLeader(data.name);
-        } else {
-          setLeader(null);
-        }
-      })
-      .catch(err => {
-        console.error('リーダー情報取得エラー:', err);
-        setLeader(null);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [date]);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      return data;
+    },
+    retry: 2,
+    retryDelay: 500,
+    staleTime: 5 * 60 * 1000, // 5分間キャッシュ
+  });
 
   if (isLoading) {
     return null;
   }
 
-  if (!leader) {
+  if (error) {
+    console.error('リーダー情報取得エラー:', error);
+    return null;
+  }
+
+  if (!leaderData || !leaderData.name) {
     return null;
   }
 
@@ -365,7 +360,7 @@ function LeaderName({ date, zoomLevel }: { date: string; zoomLevel: number }) {
 
   return (
     <span className={`text-pool-600 font-medium bg-pool-100 rounded whitespace-nowrap ${getSizeClasses()}`}>
-      {leader}
+      {leaderData.name}
     </span>
   );
 }

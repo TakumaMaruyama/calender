@@ -219,11 +219,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/leaders/generate", async (req, res) => {
     try {
       const { startDate } = req.body;
+      console.log("Generating leader schedule from:", startDate);
       const swimmers = await storage.getAllSwimmers();
+      console.log("Found swimmers:", swimmers.length);
       await storage.generateLeaderSchedule(startDate, swimmers);
+      console.log("Leader schedule generated successfully");
       res.status(201).json({ message: "リーダースケジュールを生成しました" });
     } catch (error) {
-      res.status(500).json({ error: "リーダースケジュール生成に失敗しました" });
+      console.error("Error generating leader schedule:", error);
+      res.status(500).json({ error: "リーダースケジュール生成に失敗しました", details: error.message });
     }
   });
 
