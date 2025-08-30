@@ -42,10 +42,7 @@ export function LeaderManagement() {
   // リーダー名編集
   const editLeaderMutation = useMutation({
     mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      const response = await apiRequest(`/api/swimmers/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ name }),
-      });
+      const response = await apiRequest('PUT', `/api/swimmers/${id}`, { name });
       return response;
     },
     onSuccess: () => {
@@ -63,15 +60,12 @@ export function LeaderManagement() {
   const addLeaderMutation = useMutation({
     mutationFn: async (name: string) => {
       const maxId = leaders.length > 0 ? Math.max(...leaders.map(l => l.id)) : 18;
-      const response = await apiRequest('/api/swimmers', {
-        method: 'POST',
-        body: JSON.stringify({
-          id: maxId + 1,
-          name,
-          level: 'intermediate',
-          email: null,
-          lane: null
-        }),
+      const response = await apiRequest('POST', '/api/swimmers', {
+        id: maxId + 1,
+        name,
+        level: 'intermediate',
+        email: null,
+        lane: null
       });
       return response;
     },
