@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format, addMonths, subMonths } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, Plus, Users, Download, Waves } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Users, Download, Waves, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
@@ -400,6 +400,15 @@ export default function Calendar() {
                   className="border-ocean-300 text-ocean-700 hover:bg-ocean-50 p-2"
                 >
                   <Users className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link href="/notifications">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="border-ocean-300 text-ocean-700 hover:bg-ocean-50 p-2"
+                >
+                  <Bell className="h-4 w-4" />
                 </Button>
               </Link>
               <Button 

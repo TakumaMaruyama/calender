@@ -45,6 +45,21 @@ export const leaderSchedule = pgTable("leader_schedule", {
   isActive: boolean("is_active").default(true),
 });
 
+export const notificationPreferences = pgTable("notification_preferences", {
+  id: serial("id").primaryKey(),
+  swimmerId: integer("swimmer_id").notNull(),
+  scheduleChanges: boolean("schedule_changes").default(true),
+  sessionReminders: boolean("session_reminders").default(true),
+  leaderAssignments: boolean("leader_assignments").default(true),
+  emailNotifications: boolean("email_notifications").default(false),
+  pushNotifications: boolean("push_notifications").default(true),
+  reminderHours: integer("reminder_hours").default(24), // hours before session
+  quietHoursStart: time("quiet_hours_start").default("22:00"),
+  quietHoursEnd: time("quiet_hours_end").default("07:00"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const insertSwimmerSchema = createInsertSchema(swimmers).omit({
   id: true,
 });
@@ -66,6 +81,12 @@ export const insertLeaderScheduleSchema = createInsertSchema(leaderSchedule).omi
   id: true,
 });
 
+export const insertNotificationPreferencesSchema = createInsertSchema(notificationPreferences).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export type InsertSwimmer = z.infer<typeof insertSwimmerSchema>;
 export type Swimmer = typeof swimmers.$inferSelect;
 
@@ -77,3 +98,6 @@ export type Attendance = typeof attendance.$inferSelect;
 
 export type InsertLeaderSchedule = z.infer<typeof insertLeaderScheduleSchema>;
 export type LeaderSchedule = typeof leaderSchedule.$inferSelect;
+
+export type InsertNotificationPreferences = z.infer<typeof insertNotificationPreferencesSchema>;
+export type NotificationPreferences = typeof notificationPreferences.$inferSelect;

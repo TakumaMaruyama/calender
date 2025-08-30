@@ -319,6 +319,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Notification Preferences routes
+  app.get("/api/notification-preferences/:swimmerId", async (req, res) => {
+    try {
+      const swimmerId = parseInt(req.params.swimmerId);
+      const preferences = await storage.getNotificationPreferences(swimmerId);
+      
+      if (!preferences) {
+        // Create default preferences if none exist
+        const defaultPreferences = await storage.createNotificationPreferences({
+          swimmerId,
+          scheduleChanges: true,
+          sessionReminders: true,
+          leaderAssignments: true,
+          emailNotifications: false,
+          pushNotifications: true,
+          reminderHours: 24,
+          quietHoursStart: "22:00",
+          quietHoursEnd: "07:00"
+        });
+        return res.json(defaultPreferences);
+      }
+      
+      res.json(preferences);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch notification preferences" });
+    }
+  });
+
+  app.post("/api/notification-preferences", async (req, res) => {
+    try {
+      const preferences = await storage.createNotificationPreferences(req.body);
+      res.status(201).json(preferences);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create notification preferences" });
+    }
+  });
+
+  app.put("/api/notification-preferences/:swimmerId", async (req, res) => {
+    try {
+      const swimmerId = parseInt(req.params.swimmerId);
+      const preferences = await storage.updateNotificationPreferences(swimmerId, req.body);
+      if (!preferences) {
+        return res.status(404).json({ error: "Notification preferences not found" });
+      }
+      res.json(preferences);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update notification preferences" });
+    }
+  });
+
+  app.get("/api/notification-preferences", async (req, res) => {
+    try {
+      const allPreferences = await storage.getAllNotificationPreferences();
+      res.json(allPreferences);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch all notification preferences" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

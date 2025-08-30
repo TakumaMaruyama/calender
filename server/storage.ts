@@ -3,6 +3,7 @@ import {
   trainingSessions, 
   attendance,
   leaderSchedule,
+  notificationPreferences,
   type Swimmer, 
   type InsertSwimmer,
   type TrainingSession,
@@ -10,7 +11,9 @@ import {
   type Attendance,
   type InsertAttendance,
   type LeaderSchedule,
-  type InsertLeaderSchedule
+  type InsertLeaderSchedule,
+  type NotificationPreferences,
+  type InsertNotificationPreferences
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, gte, lte, desc } from "drizzle-orm";
@@ -47,6 +50,12 @@ export interface IStorage {
   generateLeaderSchedule(startDate: string, swimmers: Swimmer[]): Promise<void>;
   setLeaderForDate(date: string, leaderId: number, leaders?: { id: number; name: string; order: number; }[]): Promise<void>;
   deleteFutureTrainingSessions(id: number): Promise<boolean>;
+
+  // Notification Preferences
+  getNotificationPreferences(swimmerId: number): Promise<NotificationPreferences | null>;
+  createNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences>;
+  updateNotificationPreferences(swimmerId: number, preferences: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences | undefined>;
+  getAllNotificationPreferences(): Promise<NotificationPreferences[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -820,6 +829,35 @@ export class DatabaseStorage implements IStorage {
         // 同期に失敗した個別のリーダーがあっても続行
       }
     }
+  }
+
+  // Notification Preferences
+  async getNotificationPreferences(swimmerId: number): Promise<NotificationPreferences | null> {
+    const [preferences] = await db.select()
+      .from(notificationPreferences)
+      .where(eq(notificationPreferences.swimmerId, swimmerId));
+    return preferences || null;
+  }
+
+  async createNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences> {
+    const [newPreferences] = await db
+      .insert(notificationPreferences)
+      .values(preferences)
+      .returning();
+    return newPreferences;
+  }
+
+  async updateNotificationPreferences(swimmerId: number, preferences: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences | undefined> {
+    const [updatedPreferences] = await db
+      .update(notificationPreferences)
+      .set(preferences)
+      .where(eq(notificationPreferences.swimmerId, swimmerId))
+      .returning();
+    return updatedPreferences || undefined;
+  }
+
+  async getAllNotificationPreferences(): Promise<NotificationPreferences[]> {
+    return await db.select().from(notificationPreferences);
   }
 }
 

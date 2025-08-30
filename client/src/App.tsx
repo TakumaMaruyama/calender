@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Calendar from "@/pages/calendar";
 import NotFound from "@/pages/not-found";
 import LeaderManagementPage from "@/pages/leader-management";
+import { NotificationPreferencesPage } from "@/pages/notification-preferences";
 
 function Router() {
   return (
@@ -13,6 +14,7 @@ function Router() {
       <Route path="/" component={Calendar} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/leaders" component={LeaderManagementPage} />
+      <Route path="/notifications" component={NotificationPreferencesPage} />
       <Route component={NotFound} />
     </Switch>
   );
