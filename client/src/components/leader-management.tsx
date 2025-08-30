@@ -79,6 +79,21 @@ export function LeaderManagement() {
     }
   });
 
+  // リーダー削除
+  const deleteLeaderMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await apiRequest('DELETE', `/api/swimmers/${id}`);
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/swimmers'] });
+      toast({
+        title: "リーダーを削除しました",
+        description: "リーダーがリストから削除されました",
+      });
+    }
+  });
+
   const handleEdit = (leader: Leader) => {
     setEditingId(leader.id);
     setEditName(leader.name);
@@ -90,48 +105,18 @@ export function LeaderManagement() {
     }
   };
 
-  // 順番を上に移動
+  // 順番変更機能（簡略化）
   const moveUp = (id: number) => {
-    setLeaders(prev => {
-      const sortedLeaders = [...prev].sort((a, b) => a.order - b.order);
-      const index = sortedLeaders.findIndex(leader => leader.id === id);
-      if (index > 0) {
-        const newLeaders = [...sortedLeaders];
-        [newLeaders[index], newLeaders[index - 1]] = [newLeaders[index - 1], newLeaders[index]];
-        // order値を再計算
-        return newLeaders.map((leader, idx) => ({ ...leader, order: idx + 1 }));
-      }
-      return prev;
+    toast({
+      title: "順序変更機能",
+      description: "現在は1-18のID順序で固定されています",
     });
   };
 
-  // 順番を下に移動
   const moveDown = (id: number) => {
-    setLeaders(prev => {
-      const sortedLeaders = [...prev].sort((a, b) => a.order - b.order);
-      const index = sortedLeaders.findIndex(leader => leader.id === id);
-      if (index < sortedLeaders.length - 1) {
-        const newLeaders = [...sortedLeaders];
-        [newLeaders[index], newLeaders[index + 1]] = [newLeaders[index + 1], newLeaders[index]];
-        // order値を再計算
-        return newLeaders.map((leader, idx) => ({ ...leader, order: idx + 1 }));
-      }
-      return prev;
-    });
-  };
-
-  // 特定位置に挿入
-  const insertAt = (name: string, position: number) => {
-    // 既存の最大IDを取得して+1
-    const maxId = leaders.length > 0 ? Math.max(...leaders.map(l => l.id)) : 16;
-    const newLeader = { id: maxId + 1, name: name.trim(), order: position };
-    setLeaders(prev => {
-      const sortedLeaders = [...prev].sort((a, b) => a.order - b.order);
-      // 挿入位置以降のorderを1つずつ増加
-      const updatedLeaders = sortedLeaders.map(leader => 
-        leader.order >= position ? { ...leader, order: leader.order + 1 } : leader
-      );
-      return [...updatedLeaders, newLeader].sort((a, b) => a.order - b.order);
+    toast({
+      title: "順序変更機能", 
+      description: "現在は1-18のID順序で固定されています",
     });
   };
 
@@ -146,13 +131,7 @@ export function LeaderManagement() {
     }
   };
 
-  const moveLeader = (id: number, direction: 'up' | 'down') => {
-    // 順序変更のロジック（簡略化）
-    toast({
-      title: "順序を変更しました",
-      description: "リーダーの順序が更新されました",
-    });
-  };
+
 
   return (
     <Card className="w-full max-w-2xl mx-auto">
