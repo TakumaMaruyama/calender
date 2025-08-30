@@ -224,6 +224,22 @@ export class DatabaseStorage implements IStorage {
 
       console.log(`Swapped names: ${fromSwimmer.name} (ID:${fromId}) <-> ${toSwimmer.name} (ID:${toId})`);
 
+      // 名前交換後、全リーダースケジュールを再生成
+      console.log('名前交換後のスケジュール再生成開始');
+      const allSwimmers = await this.getAllSwimmers();
+      const leaders = allSwimmers.filter(s => s.id >= 1 && s.id <= 18).sort((a, b) => a.id - b.id);
+      
+      if (leaders.length === 18) {
+        // 既存のスケジュールを全削除
+        await db.delete(leaderSchedule);
+        
+        // 8月1日からの正しいスケジュールを再生成
+        await this.generateLeaderSchedule('2025-08-01', leaders);
+        console.log('スケジュール再生成完了');
+      } else {
+        console.log(`リーダー数不足: ${leaders.length}/18`);
+      }
+
     } catch (error) {
       console.error('Error reordering swimmers:', error);
       throw error;
