@@ -156,14 +156,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/swimmers", async (req, res) => {
     try {
+      console.log("Creating swimmer with data:", req.body);
       const validatedData = insertSwimmerSchema.parse(req.body);
+      console.log("Validated data:", validatedData);
       const swimmer = await storage.createSwimmer(validatedData);
+      console.log("Created swimmer:", swimmer);
       res.status(201).json(swimmer);
     } catch (error) {
+      console.error("Error in swimmer creation route:", error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
-      res.status(500).json({ message: "Failed to create swimmer" });
+      res.status(500).json({ message: "Failed to create swimmer", error: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 

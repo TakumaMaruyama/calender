@@ -107,6 +107,9 @@ Changelog:
 - June 23, 2025. Updated tournament display format to 2-line format: tournament name + "※練習は無し"
 - July 25, 2025. Added swipe-to-navigate functionality for month switching in calendar view
 - July 25, 2025. Removed horizontal scroll month navigation feature per user request
+- August 30, 2025. Fixed leader rotation system - now correctly rotates through all swimmers in sequential order
+- August 30, 2025. Fixed leader creation - new leaders can be added successfully and are included in rotation
+- August 30, 2025. Added notification preferences feature with database table and UI controls
 ```
 
 ## User Preferences

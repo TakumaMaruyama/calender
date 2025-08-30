@@ -182,15 +182,20 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createSwimmer(insertSwimmer: InsertSwimmer): Promise<Swimmer> {
-    const [swimmer] = await db
-      .insert(swimmers)
-      .values({
-        ...insertSwimmer,
-        email: insertSwimmer.email || null,
-        lane: insertSwimmer.lane || null
-      })
-      .returning();
-    return swimmer;
+    try {
+      const [swimmer] = await db
+        .insert(swimmers)
+        .values({
+          ...insertSwimmer,
+          email: insertSwimmer.email || null,
+          lane: insertSwimmer.lane || null
+        })
+        .returning();
+      return swimmer;
+    } catch (error) {
+      console.error("Database error creating swimmer:", error);
+      throw new Error(`Failed to create swimmer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   async updateSwimmer(id: number, updateData: Partial<InsertSwimmer>): Promise<Swimmer | undefined> {
@@ -716,20 +721,14 @@ export class DatabaseStorage implements IStorage {
   async setLeaderForDate(date: string, leaderId: number): Promise<void> {
     console.log(`シンプルリーダー設定: ${date}, leaderId: ${leaderId}`);
     
-    // 全リーダーをIDの順序で取得（1-18）
+    // 全リーダーをIDの順序で取得（すべてのスイマー）
     const allLeaders = await db.select().from(swimmers)
-      .where(
-        and(
-          gte(swimmers.id, 1),
-          lte(swimmers.id, 18)
-        )
-      )
       .orderBy(swimmers.id);
     
     console.log('全リーダー:', allLeaders.map(l => `${l.id}:${l.name}`));
     
-    if (allLeaders.length !== 18) {
-      throw new Error(`18人のリーダーが必要です。現在: ${allLeaders.length}人`);
+    if (allLeaders.length === 0) {
+      throw new Error('リーダーが見つかりません');
     }
     
     // 選択されたリーダーのインデックス
