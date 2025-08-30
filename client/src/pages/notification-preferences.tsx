@@ -80,9 +80,14 @@ export function NotificationPreferencesPage({ swimmerId = 1 }: NotificationPrefe
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center gap-2 mb-6">
-        <Bell className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">通知設定</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Bell className="h-6 w-6" />
+          <h1 className="text-2xl font-bold">通知設定</h1>
+        </div>
+        <div className="text-sm text-muted-foreground">
+          <a href="/" className="hover:underline">カレンダー</a> / 通知設定
+        </div>
       </div>
 
       <div className="grid gap-6 max-w-4xl">
