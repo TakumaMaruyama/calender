@@ -718,38 +718,33 @@ export class DatabaseStorage implements IStorage {
     // 指定日以降を全削除
     await db.delete(leaderSchedule).where(gte(leaderSchedule.startDate, date));
     
-    // 指定日から3日サイクルに調整
-    const startDate = new Date(date);
-    const daysSince = Math.floor((startDate.getTime() - new Date('2025-08-01').getTime()) / (1000 * 60 * 60 * 24));
-    const cycleStart = new Date('2025-08-01');
-    cycleStart.setDate(cycleStart.getDate() + Math.floor(daysSince / 3) * 3);
+    // 3日ローテーションを指定日から開始
+    let rotationDate = new Date(date);
+    let currentSwimmerIndex = selectedIndex;
     
-    console.log(`サイクル開始日: ${cycleStart.toISOString().split('T')[0]}`);
+    // 6ヶ月先まで生成
+    const scheduleEndDate = new Date(rotationDate);
+    scheduleEndDate.setMonth(scheduleEndDate.getMonth() + 6);
     
-    // 6ヶ月分のローテーション生成
-    const endDate = new Date(cycleStart);
-    endDate.setMonth(endDate.getMonth() + 6);
-    
-    let currentDate = new Date(cycleStart);
-    let leaderIndex = selectedIndex;
-    
-    while (currentDate <= endDate) {
-      const leader = allLeaders[leaderIndex];
-      const scheduleEnd = new Date(currentDate);
-      scheduleEnd.setDate(scheduleEnd.getDate() + 2);
+    while (rotationDate <= scheduleEndDate) {
+      const currentSwimmer = allLeaders[currentSwimmerIndex];
       
-      console.log(`${leader.name}: ${currentDate.toISOString().split('T')[0]} - ${scheduleEnd.toISOString().split('T')[0]}`);
+      // 3日間のスケジュールを作成
+      const periodEndDate = new Date(rotationDate);
+      periodEndDate.setDate(periodEndDate.getDate() + 2); // 3日間
       
       await this.createLeaderSchedule({
-        swimmerId: leader.id,
-        startDate: currentDate.toISOString().split('T')[0],
-        endDate: scheduleEnd.toISOString().split('T')[0],
+        swimmerId: currentSwimmer.id,
+        startDate: rotationDate.toISOString().split('T')[0],
+        endDate: periodEndDate.toISOString().split('T')[0],
         isActive: true
       });
       
-      // 次のリーダー（1→2→...→18→1の順序）
-      leaderIndex = (leaderIndex + 1) % 18;
-      currentDate.setDate(currentDate.getDate() + 3);
+      // 次のスイマーに移動（循環）
+      currentSwimmerIndex = (currentSwimmerIndex + 1) % allLeaders.length;
+      
+      // 次の3日間に移動
+      rotationDate.setDate(rotationDate.getDate() + 3);
     }
     
     console.log('ローテーション完了');
