@@ -21,112 +21,66 @@ export function LeaderManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // リーダーリストの状態管理（ローカルストレージから読み込み）
-  const [leaders, setLeaders] = useState<Leader[]>([]);
-
-  // 初期化時にローカルストレージからデータを読み込み
-  useEffect(() => {
-    const savedLeaders = localStorage.getItem('scheduler-leaders');
-    if (savedLeaders) {
-      setLeaders(JSON.parse(savedLeaders));
-    } else {
-      // 初期データ（リーダーリスト）
-      const defaultLeaders = [
-        { id: 1, name: "ののか", order: 1 },
-        { id: 2, name: "有理", order: 2 },
-        { id: 3, name: "龍之介", order: 3 },
-        { id: 4, name: "彩音", order: 4 },
-        { id: 5, name: "勘太", order: 5 },
-        { id: 6, name: "悠喜", order: 6 },
-        { id: 7, name: "佳翔", order: 7 },
-        { id: 8, name: "春舞", order: 8 },
-        { id: 9, name: "滉介", order: 9 },
-        { id: 10, name: "元翔", order: 10 },
-        { id: 11, name: "百華", order: 11 },
-        { id: 12, name: "澪心", order: 12 },
-        { id: 13, name: "礼志", order: 13 },
-        { id: 14, name: "桔伊", order: 14 },
-        { id: 15, name: "虹日", order: 15 },
-        { id: 16, name: "弥広", order: 16 },
-        { id: 17, name: "侑来", order: 17 },
-        { id: 18, name: "仁幌", order: 18 }
-      ];
-      setLeaders(defaultLeaders);
-      localStorage.setItem('scheduler-leaders', JSON.stringify(defaultLeaders));
-    }
-  }, []);
-
-  // データベースと同期する関数
-  const syncWithDatabase = async (leaderList: Leader[]) => {
-    try {
-      await fetch('/api/leaders/sync', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ leaders: leaderList }),
-      });
-      console.log('リーダーリストをデータベースと同期しました');
-    } catch (error) {
-      console.error('データベース同期エラー:', error);
-    }
-  };
-
-  // リーダーリストが変更されたらローカルストレージに保存し、データベースと同期
-  useEffect(() => {
-    if (leaders.length > 0) {
-      localStorage.setItem('scheduler-leaders', JSON.stringify(leaders));
-      // データベースと同期
-      syncWithDatabase(leaders);
-    }
-  }, [leaders]);
-
-  // リーダー追加（最後に追加）
-  const addLeaderMutation = useMutation({
-    mutationFn: async (name: string) => {
-      // 既存の最大IDを取得して+1（安全な範囲で）
-      const maxId = leaders.length > 0 ? Math.max(...leaders.map(l => l.id)) : 16;
-      const newLeader = { id: maxId + 1, name, order: leaders.length + 1 };
-      setLeaders(prev => [...prev, newLeader]);
-      return newLeader;
-    },
-    onSuccess: () => {
-      setNewLeaderName("");
-      toast({
-        title: "リーダーを追加しました",
-        description: `${newLeaderName}をリーダーリストに追加しました`,
-      });
+  // データベースからリーダーリストを取得
+  const { data: swimmerData = [], isLoading } = useQuery({
+    queryKey: ['/api/swimmers'],
+    select: (data: any[]) => {
+      // ID 1-18のスイマーのみを取得し、ID順にソート
+      return data
+        .filter(swimmer => swimmer.id >= 1 && swimmer.id <= 18)
+        .sort((a, b) => a.id - b.id)
+        .map(swimmer => ({
+          id: swimmer.id,
+          name: swimmer.name,
+          order: swimmer.id
+        }));
     }
   });
 
-  // リーダー削除
-  const deleteLeaderMutation = useMutation({
-    mutationFn: async (id: number) => {
-      setLeaders(prev => prev.filter(leader => leader.id !== id));
-      return { success: true };
-    },
-    onSuccess: () => {
-      toast({
-        title: "リーダーを削除しました",
-        description: "リーダーリストから削除しました",
-      });
-    }
-  });
+  const leaders = swimmerData;
 
   // リーダー名編集
   const editLeaderMutation = useMutation({
     mutationFn: async ({ id, name }: { id: number; name: string }) => {
-      setLeaders(prev => prev.map(leader => 
-        leader.id === id ? { ...leader, name } : leader
-      ));
-      return { success: true };
+      const response = await apiRequest(`/api/swimmers/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ name }),
+      });
+      return response;
     },
     onSuccess: () => {
       setEditingId(null);
       setEditName("");
+      queryClient.invalidateQueries({ queryKey: ['/api/swimmers'] });
       toast({
         title: "リーダー名を更新しました",
         description: "変更が保存されました",
+      });
+    }
+  });
+
+  // リーダー追加
+  const addLeaderMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const maxId = leaders.length > 0 ? Math.max(...leaders.map(l => l.id)) : 18;
+      const response = await apiRequest('/api/swimmers', {
+        method: 'POST',
+        body: JSON.stringify({
+          id: maxId + 1,
+          name,
+          level: 'intermediate',
+          email: null,
+          lane: null
+        }),
+      });
+      return response;
+    },
+    onSuccess: () => {
+      setNewLeaderName("");
+      queryClient.invalidateQueries({ queryKey: ['/api/swimmers'] });
+      toast({
+        title: "リーダーを追加しました",
+        description: `${newLeaderName}をリーダーリストに追加しました`,
       });
     }
   });

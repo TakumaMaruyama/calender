@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -34,49 +34,35 @@ interface LeaderDateModalProps {
 
 export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateModalProps) {
   const [selectedLeaderId, setSelectedLeaderId] = useState<string>("");
-  const [leaders, setLeaders] = useState<Leader[]>([]);
   const { toast } = useToast();
 
-  // ローカルストレージからリーダーデータを取得
-  useEffect(() => {
-    if (isOpen) {
-      const savedLeaders = localStorage.getItem('scheduler-leaders');
-      if (savedLeaders) {
-        setLeaders(JSON.parse(savedLeaders));
-      } else {
-        // 初期データ
-        const defaultLeaders = [
-          { id: 1, name: "ののか", order: 1 },
-          { id: 2, name: "有理", order: 2 },
-          { id: 3, name: "龍之介", order: 3 },
-          { id: 4, name: "彩音", order: 4 },
-          { id: 5, name: "勘太", order: 5 },
-          { id: 6, name: "悠喜", order: 6 },
-          { id: 7, name: "佳翔", order: 7 },
-          { id: 8, name: "春舞", order: 8 },
-          { id: 9, name: "滉介", order: 9 },
-          { id: 10, name: "元翔", order: 10 },
-          { id: 11, name: "百華", order: 11 },
-          { id: 12, name: "澪心", order: 12 },
-          { id: 13, name: "礼志", order: 13 },
-          { id: 14, name: "桔伊", order: 14 },
-          { id: 15, name: "虹日", order: 15 },
-          { id: 16, name: "弥広", order: 16 },
-          { id: 17, name: "侑来", order: 17 },
-          { id: 18, name: "仁幌", order: 18 }
-        ];
-        setLeaders(defaultLeaders);
-      }
+  // データベースからリーダーリストを取得
+  const { data: swimmerData = [] } = useQuery({
+    queryKey: ['/api/swimmers'],
+    enabled: isOpen,
+    select: (data: any[]) => {
+      return data
+        .filter(swimmer => swimmer.id >= 1 && swimmer.id <= 18)
+        .sort((a, b) => a.id - b.id)
+        .map(swimmer => ({
+          id: swimmer.id,
+          name: swimmer.name,
+          order: swimmer.id
+        }));
     }
-  }, [isOpen]);
+  });
+
+  const leaders = swimmerData;
 
   // リーダー設定のミューテーション
   const setLeaderMutation = useMutation({
-    mutationFn: async (data: { date: string; leaderId: number; leaders: Leader[] }) => {
-      return await apiRequest("POST", "/api/leaders/set-for-date", { 
-        date: data.date, 
-        swimmerId: data.leaderId,
-        leaders: data.leaders
+    mutationFn: async (data: { date: string; leaderId: number }) => {
+      return await apiRequest("/api/leaders/set-for-date", {
+        method: "POST",
+        body: JSON.stringify({ 
+          date: data.date, 
+          swimmerId: data.leaderId
+        })
       });
     },
     onSuccess: () => {
@@ -84,14 +70,8 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
         title: "リーダーを設定しました",
         description: `${selectedDate}からのローテーションが開始されます`,
       });
-      // 全てのリーダー関連クエリを無効化
-      queryClient.invalidateQueries({ queryKey: ["/api/leaders"] });
+      // リーダー関連クエリを無効化
       queryClient.invalidateQueries({ queryKey: ["/api/leader"] });
-      // 既存のキャッシュを完全に削除
-      queryClient.removeQueries({ queryKey: ["/api/leader"] });
-      queryClient.clear(); // 全てのキャッシュをクリア
-      // ページを再読み込みして新しいデータを取得
-      window.location.reload();
       onClose();
       setSelectedLeaderId("");
     },
@@ -116,8 +96,7 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
 
     setLeaderMutation.mutate({
       date: selectedDate,
-      leaderId: parseInt(selectedLeaderId),
-      leaders: leaders,
+      leaderId: parseInt(selectedLeaderId)
     });
   };
 
