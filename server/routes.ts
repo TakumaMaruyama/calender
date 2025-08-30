@@ -79,9 +79,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid session ID" });
       }
 
-      const updateSchema = insertTrainingSessionSchema.omit({ title: true, type: true }).extend({
+      const updateSchema = z.object({
         title: z.string().optional(),
-        type: z.string().optional()
+        type: z.string().optional(),
+        date: z.string().optional(),
+        startTime: z.string().optional(),
+        endTime: z.string().optional(),
+        strokes: z.string().optional(),
+        distance: z.number().optional(),
+        intensity: z.string().optional(),
+        lanes: z.string().optional(),
+        menuDetails: z.string().optional(),
+        coachNotes: z.string().optional()
       }).partial();
       const validatedData = updateSchema.parse(req.body);
       const session = await storage.updateTrainingSession(id, validatedData);
@@ -155,6 +164,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });
       }
       res.status(500).json({ message: "Failed to create swimmer" });
+    }
+  });
+
+  app.put("/api/swimmers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid swimmer ID" });
+      }
+
+      const updateSchema = insertSwimmerSchema.partial();
+      const validatedData = updateSchema.parse(req.body);
+      const swimmer = await storage.updateSwimmer(id, validatedData);
+      
+      if (!swimmer) {
+        return res.status(404).json({ message: "Swimmer not found" });
+      }
+
+      res.json(swimmer);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to update swimmer" });
+    }
+  });
+
+  app.delete("/api/swimmers/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid swimmer ID" });
+      }
+
+      const deleted = await storage.deleteSwimmer(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Swimmer not found" });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete swimmer" });
+    }
+  });
+
+  app.post("/api/swimmers/reorder", async (req, res) => {
+    try {
+      const { fromId, toId } = req.body;
+      if (!fromId || !toId) {
+        return res.status(400).json({ message: "fromId and toId are required" });
+      }
+
+      await storage.reorderSwimmers(fromId, toId);
+      res.status(200).json({ message: "Swimmers reordered successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to reorder swimmers" });
     }
   });
 

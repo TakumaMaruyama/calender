@@ -94,6 +94,21 @@ export function LeaderManagement() {
     }
   });
 
+  // 順序変更
+  const reorderMutation = useMutation({
+    mutationFn: async ({ fromId, toId }: { fromId: number; toId: number }) => {
+      const response = await apiRequest('POST', '/api/swimmers/reorder', { fromId, toId });
+      return response;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/swimmers'] });
+      toast({
+        title: "順序を変更しました",
+        description: "リーダーの順序が更新されました",
+      });
+    }
+  });
+
   const handleEdit = (leader: Leader) => {
     setEditingId(leader.id);
     setEditName(leader.name);
@@ -105,19 +120,21 @@ export function LeaderManagement() {
     }
   };
 
-  // 順番変更機能（簡略化）
+  // 順番変更機能
   const moveUp = (id: number) => {
-    toast({
-      title: "順序変更機能",
-      description: "現在は1-18のID順序で固定されています",
-    });
+    const currentIndex = leaders.findIndex(leader => leader.id === id);
+    if (currentIndex > 0) {
+      const targetLeader = leaders[currentIndex - 1];
+      reorderMutation.mutate({ fromId: id, toId: targetLeader.id });
+    }
   };
 
   const moveDown = (id: number) => {
-    toast({
-      title: "順序変更機能", 
-      description: "現在は1-18のID順序で固定されています",
-    });
+    const currentIndex = leaders.findIndex(leader => leader.id === id);
+    if (currentIndex < leaders.length - 1) {
+      const targetLeader = leaders[currentIndex + 1];
+      reorderMutation.mutate({ fromId: id, toId: targetLeader.id });
+    }
   };
 
   const handleCancelEdit = () => {

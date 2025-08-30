@@ -22,6 +22,7 @@ export interface IStorage {
   createSwimmer(swimmer: InsertSwimmer): Promise<Swimmer>;
   updateSwimmer(id: number, swimmer: Partial<InsertSwimmer>): Promise<Swimmer | undefined>;
   deleteSwimmer(id: number): Promise<boolean>;
+  reorderSwimmers(fromId: number, toId: number): Promise<void>;
 
   // Training Sessions
   getTrainingSession(id: number): Promise<TrainingSession | undefined>;
@@ -199,6 +200,34 @@ export class DatabaseStorage implements IStorage {
   async deleteSwimmer(id: number): Promise<boolean> {
     const result = await db.delete(swimmers).where(eq(swimmers.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  async reorderSwimmers(fromId: number, toId: number): Promise<void> {
+    // 2つのswimmerの名前を交換する（IDは変更しない）
+    try {
+      // 現在のswimmerデータを取得
+      const fromSwimmer = await this.getSwimmer(fromId);
+      const toSwimmer = await this.getSwimmer(toId);
+      
+      if (!fromSwimmer || !toSwimmer) {
+        throw new Error('Swimmer not found');
+      }
+
+      // 名前を交換
+      await db.update(swimmers)
+        .set({ name: toSwimmer.name })
+        .where(eq(swimmers.id, fromId));
+
+      await db.update(swimmers)
+        .set({ name: fromSwimmer.name })
+        .where(eq(swimmers.id, toId));
+
+      console.log(`Swapped names: ${fromSwimmer.name} (ID:${fromId}) <-> ${toSwimmer.name} (ID:${toId})`);
+
+    } catch (error) {
+      console.error('Error reordering swimmers:', error);
+      throw error;
+    }
   }
 
   // Training Sessions
