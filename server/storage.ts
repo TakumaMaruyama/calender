@@ -860,4 +860,282 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Temporary MemoryStorage implementation to resolve database connection issues
+class MemoryStorage implements IStorage {
+  private swimmers: Swimmer[] = [];
+  private trainingSessions: TrainingSession[] = [];
+  private attendance: Attendance[] = [];
+  private leaderSchedules: LeaderSchedule[] = [];
+  private notificationPrefs: NotificationPreferences[] = [];
+  private nextId = 1;
+
+  constructor() {
+    this.initializeSampleData();
+  }
+
+  private async initializeSampleData() {
+    // Initialize with sample swimmers
+    const sampleSwimmers = [
+      "田中太郎", "佐藤花子", "山田次郎", "鈴木美咲", "高橋健太", "伊藤里奈", "渡辺勇", "中村彩", 
+      "小林大輔", "加藤美和", "吉田翔太", "山本愛", "松本健", "井上麻衣", "木村拓也", "斎藤優"
+    ];
+
+    this.swimmers = sampleSwimmers.map((name, index) => ({
+      id: index + 1,
+      name,
+      email: `swimmer${index + 1}@example.com`,
+      lane: (index % 8) + 1,
+      level: index < 5 ? "beginner" : index < 10 ? "intermediate" : "advanced"
+    } as Swimmer));
+
+    this.nextId = this.swimmers.length + 1;
+  }
+
+  // Swimmers
+  async getSwimmer(id: number): Promise<Swimmer | undefined> {
+    return this.swimmers.find(s => s.id === id);
+  }
+
+  async getAllSwimmers(): Promise<Swimmer[]> {
+    return [...this.swimmers];
+  }
+
+  async createSwimmer(swimmer: InsertSwimmer): Promise<Swimmer> {
+    const newSwimmer: Swimmer = { ...swimmer, id: this.nextId++ };
+    this.swimmers.push(newSwimmer);
+    return newSwimmer;
+  }
+
+  async updateSwimmer(id: number, swimmer: Partial<InsertSwimmer>): Promise<Swimmer | undefined> {
+    const index = this.swimmers.findIndex(s => s.id === id);
+    if (index === -1) return undefined;
+    this.swimmers[index] = { ...this.swimmers[index], ...swimmer };
+    return this.swimmers[index];
+  }
+
+  async deleteSwimmer(id: number): Promise<boolean> {
+    const index = this.swimmers.findIndex(s => s.id === id);
+    if (index === -1) return false;
+    this.swimmers.splice(index, 1);
+    return true;
+  }
+
+  async reorderSwimmers(fromId: number, toId: number): Promise<void> {
+    // Simple reorder implementation
+    const fromIndex = this.swimmers.findIndex(s => s.id === fromId);
+    const toIndex = this.swimmers.findIndex(s => s.id === toId);
+    if (fromIndex !== -1 && toIndex !== -1) {
+      const [removed] = this.swimmers.splice(fromIndex, 1);
+      this.swimmers.splice(toIndex, 0, removed);
+    }
+  }
+
+  // Training Sessions
+  async getTrainingSession(id: number): Promise<TrainingSession | undefined> {
+    return this.trainingSessions.find(s => s.id === id);
+  }
+
+  async getAllTrainingSessions(): Promise<TrainingSession[]> {
+    return [...this.trainingSessions];
+  }
+
+  async getTrainingSessionsByDate(date: string): Promise<TrainingSession[]> {
+    return this.trainingSessions.filter(s => s.date === date);
+  }
+
+  async getTrainingSessionsByMonth(year: number, month: number): Promise<TrainingSession[]> {
+    return this.trainingSessions.filter(s => {
+      const sessionDate = new Date(s.date);
+      return sessionDate.getFullYear() === year && sessionDate.getMonth() + 1 === month;
+    });
+  }
+
+  async createTrainingSession(session: InsertTrainingSession): Promise<TrainingSession> {
+    const newSession: TrainingSession = { 
+      ...session, 
+      id: this.nextId++,
+      type: session.type || null,
+      title: session.title || null,
+      endTime: session.endTime || null,
+      strokes: session.strokes || null,
+      distance: session.distance || null,
+      intensity: session.intensity || null,
+      lanes: session.lanes || null,
+      menuDetails: session.menuDetails || null,
+      coachNotes: session.coachNotes || null,
+      isRecurring: session.isRecurring || false,
+      recurringPattern: session.recurringPattern || null,
+      recurringEndDate: session.recurringEndDate || null,
+      weekdays: session.weekdays || null,
+      maxOccurrences: session.maxOccurrences || null
+    };
+    this.trainingSessions.push(newSession);
+    return newSession;
+  }
+
+  async updateTrainingSession(id: number, session: Partial<InsertTrainingSession>): Promise<TrainingSession | undefined> {
+    const index = this.trainingSessions.findIndex(s => s.id === id);
+    if (index === -1) return undefined;
+    this.trainingSessions[index] = { ...this.trainingSessions[index], ...session };
+    return this.trainingSessions[index];
+  }
+
+  async deleteTrainingSession(id: number): Promise<boolean> {
+    const index = this.trainingSessions.findIndex(s => s.id === id);
+    if (index === -1) return false;
+    this.trainingSessions.splice(index, 1);
+    return true;
+  }
+
+  async deleteFutureTrainingSessions(id: number): Promise<boolean> {
+    const session = this.trainingSessions.find(s => s.id === id);
+    if (!session) return false;
+    
+    const sessionDate = new Date(session.date);
+    this.trainingSessions = this.trainingSessions.filter(s => {
+      const date = new Date(s.date);
+      return date <= sessionDate || s.id === id;
+    });
+    return true;
+  }
+
+  // Attendance
+  async getAttendance(sessionId: number): Promise<Attendance[]> {
+    return this.attendance.filter(a => a.sessionId === sessionId);
+  }
+
+  async createAttendance(attendance: InsertAttendance): Promise<Attendance> {
+    const newAttendance: Attendance = { 
+      ...attendance, 
+      id: this.nextId++,
+      attended: attendance.attended !== undefined ? attendance.attended : false
+    };
+    this.attendance.push(newAttendance);
+    return newAttendance;
+  }
+
+  async updateAttendance(id: number, attended: boolean): Promise<Attendance | undefined> {
+    const index = this.attendance.findIndex(a => a.id === id);
+    if (index === -1) return undefined;
+    this.attendance[index] = { ...this.attendance[index], attended };
+    return this.attendance[index];
+  }
+
+  // Leader Schedule
+  async getLeaderForDate(date: string): Promise<{ name: string } | null> {
+    const schedule = this.leaderSchedules.find(ls => 
+      ls.startDate <= date && ls.endDate >= date && ls.isActive
+    );
+    if (!schedule) return null;
+    
+    const swimmer = this.swimmers.find(s => s.id === schedule.swimmerId);
+    return swimmer ? { name: swimmer.name } : null;
+  }
+
+  async getAllLeaderSchedules(): Promise<LeaderSchedule[]> {
+    return [...this.leaderSchedules];
+  }
+
+  async createLeaderSchedule(schedule: InsertLeaderSchedule): Promise<LeaderSchedule> {
+    const newSchedule: LeaderSchedule = { 
+      ...schedule, 
+      id: this.nextId++,
+      isActive: schedule.isActive !== undefined ? schedule.isActive : true
+    };
+    this.leaderSchedules.push(newSchedule);
+    return newSchedule;
+  }
+
+  async updateLeaderSchedule(id: number, schedule: Partial<InsertLeaderSchedule>): Promise<LeaderSchedule | undefined> {
+    const index = this.leaderSchedules.findIndex(s => s.id === id);
+    if (index === -1) return undefined;
+    this.leaderSchedules[index] = { ...this.leaderSchedules[index], ...schedule };
+    return this.leaderSchedules[index];
+  }
+
+  async deleteLeaderSchedule(id: number): Promise<boolean> {
+    const index = this.leaderSchedules.findIndex(s => s.id === id);
+    if (index === -1) return false;
+    this.leaderSchedules.splice(index, 1);
+    return true;
+  }
+
+  async generateLeaderSchedule(startDate: string, swimmers: Swimmer[]): Promise<void> {
+    // Simple leader schedule generation
+    const leaders = swimmers.slice(0, Math.min(swimmers.length, 16));
+    const start = new Date(startDate);
+    
+    leaders.forEach((leader, index) => {
+      const scheduleStart = new Date(start);
+      scheduleStart.setDate(start.getDate() + (index * 7));
+      const scheduleEnd = new Date(scheduleStart);
+      scheduleEnd.setDate(scheduleStart.getDate() + 6);
+      
+      this.leaderSchedules.push({
+        id: this.nextId++,
+        swimmerId: leader.id,
+        startDate: scheduleStart.toISOString().split('T')[0],
+        endDate: scheduleEnd.toISOString().split('T')[0],
+        isActive: true
+      });
+    });
+  }
+
+  async setLeaderForDate(date: string, leaderId: number): Promise<void> {
+    // Update or create leader schedule for specific date
+    const existingIndex = this.leaderSchedules.findIndex(ls => 
+      ls.startDate <= date && ls.endDate >= date
+    );
+    
+    if (existingIndex !== -1) {
+      this.leaderSchedules[existingIndex].swimmerId = leaderId;
+    } else {
+      this.leaderSchedules.push({
+        id: this.nextId++,
+        swimmerId: leaderId,
+        startDate: date,
+        endDate: date,
+        isActive: true
+      });
+    }
+  }
+
+  // Notification Preferences
+  async getNotificationPreferences(swimmerId: number): Promise<NotificationPreferences | null> {
+    return this.notificationPrefs.find(p => p.swimmerId === swimmerId) || null;
+  }
+
+  async createNotificationPreferences(preferences: InsertNotificationPreferences): Promise<NotificationPreferences> {
+    const now = new Date();
+    const newPrefs: NotificationPreferences = { 
+      ...preferences, 
+      id: this.nextId++,
+      scheduleChanges: preferences.scheduleChanges !== undefined ? preferences.scheduleChanges : true,
+      sessionReminders: preferences.sessionReminders !== undefined ? preferences.sessionReminders : true,
+      leaderAssignments: preferences.leaderAssignments !== undefined ? preferences.leaderAssignments : true,
+      emailNotifications: preferences.emailNotifications !== undefined ? preferences.emailNotifications : false,
+      pushNotifications: preferences.pushNotifications !== undefined ? preferences.pushNotifications : true,
+      reminderHours: preferences.reminderHours !== undefined ? preferences.reminderHours : 24,
+      quietHoursStart: preferences.quietHoursStart || "22:00",
+      quietHoursEnd: preferences.quietHoursEnd || "07:00",
+      createdAt: now,
+      updatedAt: now
+    };
+    this.notificationPrefs.push(newPrefs);
+    return newPrefs;
+  }
+
+  async updateNotificationPreferences(swimmerId: number, preferences: Partial<InsertNotificationPreferences>): Promise<NotificationPreferences | undefined> {
+    const index = this.notificationPrefs.findIndex(p => p.swimmerId === swimmerId);
+    if (index === -1) return undefined;
+    this.notificationPrefs[index] = { ...this.notificationPrefs[index], ...preferences };
+    return this.notificationPrefs[index];
+  }
+
+  async getAllNotificationPreferences(): Promise<NotificationPreferences[]> {
+    return [...this.notificationPrefs];
+  }
+}
+
+// Use MemoryStorage temporarily until database connection is fixed
+export const storage = new MemoryStorage();
