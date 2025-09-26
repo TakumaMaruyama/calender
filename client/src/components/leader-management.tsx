@@ -71,7 +71,9 @@ export function LeaderManagement() {
     },
     onSuccess: () => {
       setNewLeaderName("");
+      // キャッシュを完全に無効化してUIを即座に更新
       queryClient.invalidateQueries({ queryKey: ['/api/swimmers'] });
+      queryClient.refetchQueries({ queryKey: ['/api/swimmers'] });
       toast({
         title: "リーダーを追加しました",
         description: `${newLeaderName}をリーダーリストに追加しました`,
