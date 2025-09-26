@@ -311,10 +311,8 @@ function LeaderName({ date, zoomLevel }: { date: string; zoomLevel: number }) {
   const targetDate = new Date(date);
   const dayOfWeek = targetDate.getDay();
   
-  // 月曜日(1)と金曜日(5)のみ表示
-  if (dayOfWeek !== 1 && dayOfWeek !== 5) {
-    return null;
-  }
+  // 全ての日にリーダーを表示（100人対応のため制限を解除）
+  // 以前は月曜日(1)と金曜日(5)のみでしたが、拡張されたリーダー機能により全日対応
 
   const { data: leaderData, isLoading, error } = useQuery({
     queryKey: ["/api/leader", date],

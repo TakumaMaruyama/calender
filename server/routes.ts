@@ -92,7 +92,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         menuDetails: z.string().optional(),
         coachNotes: z.string().optional()
       }).partial();
-      const validatedData = updateSchema.parse(req.body);
+      const parsedData = updateSchema.parse(req.body);
+      // Ensure strokes is properly converted to array format for storage
+      const validatedData = {
+        ...parsedData,
+        strokes: parsedData.strokes 
+          ? (Array.isArray(parsedData.strokes) ? parsedData.strokes : [parsedData.strokes])
+          : null
+      } as Partial<InsertTrainingSession>;
       const session = await storage.updateTrainingSession(id, validatedData);
       
       if (!session) {
@@ -297,16 +304,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/leaders/generate", async (req, res) => {
     try {
-      const { startDate } = req.body;
+      let { startDate } = req.body;
+      
+      // Validate and provide default startDate if not provided
+      if (!startDate) {
+        const today = new Date();
+        startDate = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+        console.log("No startDate provided, using today:", startDate);
+      }
+      
+      // Validate startDate format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(startDate)) {
+        return res.status(400).json({ 
+          error: "Invalid startDate format. Expected YYYY-MM-DD" 
+        });
+      }
+      
       console.log("Generating leader schedule from:", startDate);
       const swimmers = await storage.getAllSwimmers();
       console.log("Found swimmers:", swimmers.length);
+      
+      if (swimmers.length === 0) {
+        return res.status(400).json({ 
+          error: "No swimmers found. Cannot generate leader schedule." 
+        });
+      }
+      
       await storage.generateLeaderSchedule(startDate, swimmers);
       console.log("Leader schedule generated successfully");
-      res.status(201).json({ message: "リーダースケジュールを生成しました" });
+      res.status(201).json({ 
+        message: "リーダースケジュールを生成しました",
+        startDate: startDate,
+        swimmersCount: swimmers.length
+      });
     } catch (error) {
       console.error("Error generating leader schedule:", error);
-      res.status(500).json({ error: "リーダースケジュール生成に失敗しました", details: error instanceof Error ? error.message : "Unknown error" });
+      res.status(500).json({ 
+        error: "リーダースケジュール生成に失敗しました", 
+        details: error instanceof Error ? error.message : "Unknown error" 
+      });
     }
   });
 
