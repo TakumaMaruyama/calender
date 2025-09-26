@@ -874,10 +874,14 @@ class MemoryStorage implements IStorage {
   }
 
   private async initializeSampleData() {
-    // Initialize with sample swimmers
+    // Initialize with more sample swimmers to support larger leader capacity
     const sampleSwimmers = [
       "田中太郎", "佐藤花子", "山田次郎", "鈴木美咲", "高橋健太", "伊藤里奈", "渡辺勇", "中村彩", 
-      "小林大輔", "加藤美和", "吉田翔太", "山本愛", "松本健", "井上麻衣", "木村拓也", "斎藤優"
+      "小林大輔", "加藤美和", "吉田翔太", "山本愛", "松本健", "井上麻衣", "木村拓也", "斎藤優",
+      "森下健司", "長谷川美穂", "福田大樹", "青木優花", "中島康平", "橋本沙織", "西田翔太", "岡田美里",
+      "村上雄一", "近藤愛美", "石川智也", "上田麻衣", "原田勇気", "野口彩乃", "平田大地", "坂本由香",
+      "池田俊介", "小川美咲", "松井健太", "谷口里奈", "清水翔", "宮崎愛", "柴田大輔", "堀川美和",
+      "今井翔太", "大野愛梨", "内田健", "山下麻衣", "小島拓也", "土屋優", "新井彩", "片山勇"
     ];
 
     this.swimmers = sampleSwimmers.map((name, index) => ({
@@ -1061,8 +1065,8 @@ class MemoryStorage implements IStorage {
   }
 
   async generateLeaderSchedule(startDate: string, swimmers: Swimmer[]): Promise<void> {
-    // Simple leader schedule generation
-    const leaders = swimmers.slice(0, Math.min(swimmers.length, 16));
+    // Enhanced leader schedule generation - supports up to 100 leaders
+    const leaders = swimmers.slice(0, Math.min(swimmers.length, 100));
     const start = new Date(startDate);
     
     leaders.forEach((leader, index) => {
