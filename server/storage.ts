@@ -884,13 +884,16 @@ class MemoryStorage implements IStorage {
       "今井翔太", "大野愛梨", "内田健", "山下麻衣", "小島拓也", "土屋優", "新井彩", "片山勇"
     ];
 
-    this.swimmers = sampleSwimmers.map((name, index) => ({
-      id: index + 1,
-      name,
-      email: `swimmer${index + 1}@example.com`,
-      lane: (index % 8) + 1,
-      level: index < 5 ? "beginner" : index < 10 ? "intermediate" : "advanced"
-    } as Swimmer));
+    this.swimmers = sampleSwimmers.map((name, index) => {
+      const swimmer: Swimmer = {
+        id: index + 1,
+        name,
+        email: `swimmer${index + 1}@example.com`,
+        lane: (index % 8) + 1,
+        level: index < 12 ? "beginner" : index < 24 ? "intermediate" : "advanced"
+      };
+      return swimmer;
+    });
 
     this.nextId = this.swimmers.length + 1;
   }
@@ -905,7 +908,13 @@ class MemoryStorage implements IStorage {
   }
 
   async createSwimmer(swimmer: InsertSwimmer): Promise<Swimmer> {
-    const newSwimmer: Swimmer = { ...swimmer, id: this.nextId++ };
+    const newSwimmer: Swimmer = { 
+      id: this.nextId++,
+      name: swimmer.name,
+      email: swimmer.email || null,
+      lane: swimmer.lane || null,
+      level: swimmer.level
+    };
     this.swimmers.push(newSwimmer);
     return newSwimmer;
   }

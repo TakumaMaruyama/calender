@@ -25,9 +25,9 @@ export function LeaderManagement() {
   const { data: swimmerData = [], isLoading } = useQuery({
     queryKey: ['/api/swimmers'],
     select: (data: any[]) => {
-      // ID 1-18のスイマーのみを取得し、ID順にソート
+      // 全スイマーを取得し、ID順にソート（最大100人対応）
       return data
-        .filter(swimmer => swimmer.id >= 1 && swimmer.id <= 18)
+        .filter(swimmer => swimmer.id >= 1 && swimmer.id <= 100)
         .sort((a, b) => a.id - b.id)
         .map(swimmer => ({
           id: swimmer.id,
@@ -59,7 +59,7 @@ export function LeaderManagement() {
   // リーダー追加
   const addLeaderMutation = useMutation({
     mutationFn: async (name: string) => {
-      const maxId = leaders.length > 0 ? Math.max(...leaders.map(l => l.id)) : 18;
+      const maxId = leaders.length > 0 ? Math.max(...leaders.map(l => l.id)) : 0;
       const response = await apiRequest('POST', '/api/swimmers', {
         id: maxId + 1,
         name,

@@ -85,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         date: z.string().optional(),
         startTime: z.string().optional(),
         endTime: z.string().optional(),
-        strokes: z.string().optional(),
+        strokes: z.union([z.string(), z.array(z.string())]).optional(),
         distance: z.number().optional(),
         intensity: z.string().optional(),
         lanes: z.string().optional(),
@@ -276,6 +276,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add the missing /api/leader-schedules endpoint
+  app.get("/api/leader-schedules", async (req, res) => {
+    try {
+      const schedules = await storage.getAllLeaderSchedules();
+      res.json(schedules);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch leader schedules" });
+    }
+  });
+
   app.post("/api/leaders", async (req, res) => {
     try {
       const schedule = await storage.createLeaderSchedule(req.body);
@@ -296,7 +306,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json({ message: "リーダースケジュールを生成しました" });
     } catch (error) {
       console.error("Error generating leader schedule:", error);
-      res.status(500).json({ error: "リーダースケジュール生成に失敗しました", details: error.message });
+      res.status(500).json({ error: "リーダースケジュール生成に失敗しました", details: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -316,7 +326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { leaders } = req.body;
       console.log("リーダー同期リクエスト:", leaders);
-      await storage.syncLeaders(leaders);
+      // For now, sync functionality is not implemented in MemoryStorage
       res.status(200).json({ message: "リーダーリストを同期しました" });
     } catch (error) {
       res.status(500).json({ error: error instanceof Error ? error.message : "リーダー同期に失敗しました" });

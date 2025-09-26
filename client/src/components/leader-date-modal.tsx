@@ -42,7 +42,7 @@ export function LeaderDateModal({ isOpen, onClose, selectedDate }: LeaderDateMod
     enabled: isOpen,
     select: (data: any[]) => {
       return data
-        .filter(swimmer => swimmer.id >= 1 && swimmer.id <= 18)
+        .filter(swimmer => swimmer.id >= 1 && swimmer.id <= 100)
         .sort((a, b) => a.id - b.id)
         .map(swimmer => ({
           id: swimmer.id,
