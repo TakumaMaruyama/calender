@@ -1168,5 +1168,5 @@ class MemoryStorage implements IStorage {
   }
 }
 
-// Use MemoryStorage temporarily until database connection is fixed
+// Use MemoryStorage - サンプルデータ初期化を無効化してユーザーデータを保護
 export const storage = new MemoryStorage();
