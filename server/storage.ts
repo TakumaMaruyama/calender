@@ -719,7 +719,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async setLeaderForDate(date: string, leaderId: number): Promise<void> {
-    console.log(`シンプルリーダー設定: ${date}, leaderId: ${leaderId}`);
+    console.log(`新ローテーション設定: ${date}, leaderId: ${leaderId}`);
     
     // 全リーダーをIDの順序で取得（すべてのスイマー）
     const allLeaders = await db.select().from(swimmers)
@@ -742,36 +742,93 @@ export class DatabaseStorage implements IStorage {
     // 指定日以降を全削除
     await db.delete(leaderSchedule).where(gte(leaderSchedule.startDate, date));
     
-    // 3日ローテーションを指定日から開始
-    let rotationDate = new Date(date);
+    // 月火水・金土日ローテーションを開始
+    let currentDate = new Date(date);
     let currentSwimmerIndex = selectedIndex;
     
     // 6ヶ月先まで生成
-    const scheduleEndDate = new Date(rotationDate);
+    const scheduleEndDate = new Date(currentDate);
     scheduleEndDate.setMonth(scheduleEndDate.getMonth() + 6);
     
-    while (rotationDate <= scheduleEndDate) {
+    while (currentDate <= scheduleEndDate) {
+      const dayOfWeek = currentDate.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+      
+      // 木曜日はスキップ
+      if (dayOfWeek === 4) {
+        currentDate.setDate(currentDate.getDate() + 1);
+        continue;
+      }
+      
       const currentSwimmer = allLeaders[currentSwimmerIndex];
       
-      // 3日間のスケジュールを作成
-      const periodEndDate = new Date(rotationDate);
-      periodEndDate.setDate(periodEndDate.getDate() + 2); // 3日間
+      // 月火水または金土日のブロックを判定
+      let blockStartDate, blockEndDate;
       
-      await this.createLeaderSchedule({
-        swimmerId: currentSwimmer.id,
-        startDate: rotationDate.toISOString().split('T')[0],
-        endDate: periodEndDate.toISOString().split('T')[0],
-        isActive: true
-      });
+      if (dayOfWeek === 1) { // 月曜日の場合：月火水ブロック
+        blockStartDate = new Date(currentDate);
+        blockEndDate = new Date(currentDate);
+        blockEndDate.setDate(blockEndDate.getDate() + 2); // 水曜日まで
+      } else if (dayOfWeek === 5) { // 金曜日の場合：金土日ブロック
+        blockStartDate = new Date(currentDate);
+        blockEndDate = new Date(currentDate);
+        blockEndDate.setDate(blockEndDate.getDate() + 2); // 日曜日まで
+      } else {
+        // 月曜日でも金曜日でもない場合は、適切なブロックの開始日を見つける
+        if (dayOfWeek === 2 || dayOfWeek === 3) { // 火曜日または水曜日
+          // 直前の月曜日を探す
+          blockStartDate = new Date(currentDate);
+          blockStartDate.setDate(blockStartDate.getDate() - (dayOfWeek - 1));
+          blockEndDate = new Date(blockStartDate);
+          blockEndDate.setDate(blockEndDate.getDate() + 2);
+        } else if (dayOfWeek === 6 || dayOfWeek === 0) { // 土曜日または日曜日
+          // 直前の金曜日を探す
+          const daysBack = dayOfWeek === 6 ? 1 : 2;
+          blockStartDate = new Date(currentDate);
+          blockStartDate.setDate(blockStartDate.getDate() - daysBack);
+          blockEndDate = new Date(blockStartDate);
+          blockEndDate.setDate(blockEndDate.getDate() + 2);
+        } else {
+          currentDate.setDate(currentDate.getDate() + 1);
+          continue;
+        }
+      }
       
-      // 次のスイマーに移動（循環）
-      currentSwimmerIndex = (currentSwimmerIndex + 1) % allLeaders.length;
+      // スケジュールがまだ存在しない場合のみ作成
+      const existingSchedule = await db.select().from(leaderSchedule)
+        .where(
+          and(
+            eq(leaderSchedule.startDate, blockStartDate.toISOString().split('T')[0]),
+            eq(leaderSchedule.endDate, blockEndDate.toISOString().split('T')[0])
+          )
+        );
       
-      // 次の3日間に移動
-      rotationDate.setDate(rotationDate.getDate() + 3);
+      if (existingSchedule.length === 0) {
+        await this.createLeaderSchedule({
+          swimmerId: currentSwimmer.id,
+          startDate: blockStartDate.toISOString().split('T')[0],
+          endDate: blockEndDate.toISOString().split('T')[0],
+          isActive: true
+        });
+        
+        console.log(`スケジュール作成: ${currentSwimmer.name} (${blockStartDate.toISOString().split('T')[0]} - ${blockEndDate.toISOString().split('T')[0]})`);
+        
+        // 次のスイマーに移動（循環）
+        currentSwimmerIndex = (currentSwimmerIndex + 1) % allLeaders.length;
+      }
+      
+      // 次のブロックの開始日に移動
+      if (dayOfWeek === 1 || dayOfWeek === 2 || dayOfWeek === 3) {
+        // 月火水ブロックの場合、次の金曜日に移動
+        currentDate = new Date(blockEndDate);
+        currentDate.setDate(currentDate.getDate() + 2); // 金曜日
+      } else {
+        // 金土日ブロックの場合、次の月曜日に移動
+        currentDate = new Date(blockEndDate);
+        currentDate.setDate(currentDate.getDate() + 1); // 月曜日
+      }
     }
     
-    console.log('ローテーション完了');
+    console.log('新ローテーション完了');
   }
 
   async syncLeaders(leaders: { id: number; name: string; order: number; }[]): Promise<void> {
