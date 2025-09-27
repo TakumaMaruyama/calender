@@ -1168,5 +1168,5 @@ class MemoryStorage implements IStorage {
   }
 }
 
-// Use MemoryStorage - サンプルデータ初期化を無効化してユーザーデータを保護
-export const storage = new MemoryStorage();
+// Use DatabaseStorage to read existing swimmer/leader data from PostgreSQL
+export const storage = new DatabaseStorage();
