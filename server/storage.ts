@@ -620,6 +620,18 @@ export class DatabaseStorage implements IStorage {
 
   // Leader Schedule
   async getLeaderForDate(date: string): Promise<{ name: string } | null> {
+    console.log(`リーダー情報取得リクエスト: ${date}`);
+    
+    // 日付の曜日をチェック（月曜日と金曜日のみ名前を表示）
+    const requestDate = new Date(date);
+    const dayOfWeek = requestDate.getDay(); // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+    
+    // 月曜日（1）と金曜日（5）以外は名前を表示しない
+    if (dayOfWeek !== 1 && dayOfWeek !== 5) {
+      console.log(`リーダー情報結果: null (${dayOfWeek === 4 ? '木曜日' : '名前非表示日'})`);
+      return null;
+    }
+    
     const schedules = await db.select().from(leaderSchedule)
       .where(and(
         lte(leaderSchedule.startDate, date),
@@ -628,13 +640,16 @@ export class DatabaseStorage implements IStorage {
       ));
 
     if (schedules.length === 0) {
+      console.log(`リーダー情報結果: null (スケジュールなし)`);
       return null;
     }
 
     const schedule = schedules[0];
     // クライアント側から動的にリーダーリストを取得する代わりに、データベースから取得
     const swimmer = await this.getSwimmer(schedule.swimmerId);
-    return swimmer ? { name: swimmer.name } : null;
+    const result = swimmer ? { name: swimmer.name } : null;
+    console.log(`リーダー情報結果: ${result ? result.name : 'null'}`);
+    return result;
   }
 
   async getAllLeaderSchedules(): Promise<LeaderSchedule[]> {
