@@ -1076,22 +1076,59 @@ class MemoryStorage implements IStorage {
   }
 
   async setLeaderForDate(date: string, leaderId: number): Promise<void> {
-    // Update or create leader schedule for specific date
-    const existingIndex = this.leaderSchedules.findIndex(ls => 
-      ls.startDate <= date && ls.endDate >= date
-    );
+    console.log(`シンプルリーダー設定: ${date}, leaderId: ${leaderId}`);
     
-    if (existingIndex !== -1) {
-      this.leaderSchedules[existingIndex].swimmerId = leaderId;
-    } else {
+    // 全リーダーをIDの順序で取得（すべてのスイマー）
+    const allLeaders = this.swimmers.sort((a, b) => a.id - b.id);
+    
+    console.log('全リーダー:', allLeaders.map(l => `${l.id}:${l.name}`));
+    
+    if (allLeaders.length === 0) {
+      throw new Error('リーダーが見つかりません');
+    }
+    
+    // 選択されたリーダーのインデックス
+    const selectedIndex = allLeaders.findIndex(l => l.id === leaderId);
+    if (selectedIndex === -1) {
+      throw new Error(`リーダーID ${leaderId} が見つかりません`);
+    }
+    
+    console.log(`選択リーダーインデックス: ${selectedIndex} (${allLeaders[selectedIndex].name})`);
+    
+    // 指定日以降を全削除
+    this.leaderSchedules = this.leaderSchedules.filter(ls => ls.startDate < date);
+    
+    // 3日ローテーションを指定日から開始
+    let rotationDate = new Date(date);
+    let currentSwimmerIndex = selectedIndex;
+    
+    // 6ヶ月先まで生成
+    const scheduleEndDate = new Date(rotationDate);
+    scheduleEndDate.setMonth(scheduleEndDate.getMonth() + 6);
+    
+    while (rotationDate <= scheduleEndDate) {
+      const currentSwimmer = allLeaders[currentSwimmerIndex];
+      
+      // 3日間のスケジュールを作成
+      const periodEndDate = new Date(rotationDate);
+      periodEndDate.setDate(periodEndDate.getDate() + 2); // 3日間
+      
       this.leaderSchedules.push({
         id: this.nextId++,
-        swimmerId: leaderId,
-        startDate: date,
-        endDate: date,
+        swimmerId: currentSwimmer.id,
+        startDate: rotationDate.toISOString().split('T')[0],
+        endDate: periodEndDate.toISOString().split('T')[0],
         isActive: true
       });
+      
+      // 次のスイマーに移動（循環）
+      currentSwimmerIndex = (currentSwimmerIndex + 1) % allLeaders.length;
+      
+      // 次の3日間に移動
+      rotationDate.setDate(rotationDate.getDate() + 3);
     }
+    
+    console.log('ローテーション完了');
   }
 
   // Notification Preferences
