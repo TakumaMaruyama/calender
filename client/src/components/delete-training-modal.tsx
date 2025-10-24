@@ -26,7 +26,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -66,16 +66,22 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
   });
 
   // セッションが変更されたらフォームをリセット
-  useState(() => {
+  useEffect(() => {
     if (session) {
+      // 大会の場合、タイトルから大会名を抽出
+      const isTournament = session.title?.includes('\n※練習は無し');
+      const competitionName = isTournament 
+        ? session.title?.split('\n')[0] || ""
+        : "";
+      
       form.reset({
-        title: session.title || "",
+        title: isTournament ? "大会" : (session.title || ""),
         type: session.type || "",
-        competitionName: "",
+        competitionName: competitionName,
       });
-      setSelectedTrainingName(session.title || "");
+      setSelectedTrainingName(isTournament ? "大会" : (session.title || ""));
     }
-  });
+  }, [session, form]);
 
   const editMutation = useMutation({
     mutationFn: async (data: EditFormData) => {
@@ -88,14 +94,13 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
 
       const updateData: any = {};
 
-      // titleまたはtypeのどちらかのみを含める
-      if (finalTitle !== undefined) {
+      // titleまたはtypeのどちらかを設定
+      if (finalTitle && finalTitle.trim() !== "") {
         updateData.title = finalTitle;
-        updateData.type = ""; // titleを設定する場合はtypeをクリア
-      }
-      if (data.type && !finalTitle) {
+        updateData.type = null; // titleを設定する場合はtypeをnullに
+      } else if (data.type && data.type.trim() !== "") {
         updateData.type = data.type;
-        updateData.title = ""; // typeを設定する場合はtitleをクリア
+        updateData.title = null; // typeを設定する場合はtitleをnullに
       }
 
       const response = await fetch(`/api/training-sessions/${session.id}`, {
@@ -242,7 +247,7 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value=" ">(空白)</SelectItem>
+                          <SelectItem value="">(空白)</SelectItem>
                           <SelectItem value="ミニレク">ミニレク</SelectItem>
                           <SelectItem value="外">外</SelectItem>
                           <SelectItem value="ミニ授業">ミニ授業</SelectItem>
