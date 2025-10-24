@@ -80,8 +80,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const updateSchema = z.object({
-        title: z.string().optional(),
-        type: z.string().optional(),
+        title: z.string().nullable().optional(),
+        type: z.string().nullable().optional(),
         date: z.string().optional(),
         startTime: z.string().optional(),
         endTime: z.string().optional(),
