@@ -87,9 +87,9 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
     mutationFn: async (data: EditFormData) => {
       if (!session) return;
 
-      // _empty_を空文字列に変換
-      const processedTitle = data.title === "_empty_" ? "" : data.title;
-      const processedType = data.type === "_empty_" ? "" : data.type;
+      // _empty_をnullに変換
+      const processedTitle = data.title === "_empty_" ? null : data.title;
+      const processedType = data.type === "_empty_" ? null : data.type;
 
       // 大会の場合は2行形式でタイトルを作成
       const finalTitle = processedTitle === "大会" && data.competitionName 
@@ -105,7 +105,7 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
       } else if (processedType && processedType.trim() !== "") {
         updateData.type = processedType;
         updateData.title = null; // typeを設定する場合はtitleをnullに
-      } else if (processedTitle === "" || processedType === "") {
+      } else {
         // 明示的に空白に設定する場合
         updateData.title = null;
         updateData.type = null;
