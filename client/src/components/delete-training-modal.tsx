@@ -75,8 +75,8 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
         : "";
       
       form.reset({
-        title: isTournament ? "大会" : (session.title || ""),
-        type: session.type || "",
+        title: isTournament ? "大会" : (session.title || "_empty_"),
+        type: session.type || "_empty_",
         competitionName: competitionName,
       });
       setSelectedTrainingName(isTournament ? "大会" : (session.title || ""));
@@ -87,10 +87,14 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
     mutationFn: async (data: EditFormData) => {
       if (!session) return;
 
+      // _empty_を空文字列に変換
+      const processedTitle = data.title === "_empty_" ? "" : data.title;
+      const processedType = data.type === "_empty_" ? "" : data.type;
+
       // 大会の場合は2行形式でタイトルを作成
-      const finalTitle = data.title === "大会" && data.competitionName 
+      const finalTitle = processedTitle === "大会" && data.competitionName 
         ? `${data.competitionName}\n※練習は無し`
-        : data.title;
+        : processedTitle;
 
       const updateData: any = {};
 
@@ -98,9 +102,13 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
       if (finalTitle && finalTitle.trim() !== "") {
         updateData.title = finalTitle;
         updateData.type = null; // titleを設定する場合はtypeをnullに
-      } else if (data.type && data.type.trim() !== "") {
-        updateData.type = data.type;
+      } else if (processedType && processedType.trim() !== "") {
+        updateData.type = processedType;
         updateData.title = null; // typeを設定する場合はtitleをnullに
+      } else if (processedTitle === "" || processedType === "") {
+        // 明示的に空白に設定する場合
+        updateData.title = null;
+        updateData.type = null;
       }
 
       const response = await fetch(`/api/training-sessions/${session.id}`, {
@@ -247,7 +255,7 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">(空白)</SelectItem>
+                          <SelectItem value="_empty_">(空白)</SelectItem>
                           <SelectItem value="ミニレク">ミニレク</SelectItem>
                           <SelectItem value="外">外</SelectItem>
                           <SelectItem value="ミニ授業">ミニ授業</SelectItem>
