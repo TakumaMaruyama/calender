@@ -1,3 +1,4 @@
+
 import {
   Dialog,
   DialogContent,
@@ -5,14 +6,34 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Trash2, Calendar, CalendarDays } from "lucide-react";
+import { Trash2, Edit, Calendar, CalendarDays } from "lucide-react";
 import type { TrainingSession } from "@shared/schema";
 
 interface DeleteTrainingModalProps {
@@ -22,16 +43,100 @@ interface DeleteTrainingModalProps {
   onSuccess?: () => void;
 }
 
+const editFormSchema = z.object({
+  title: z.string().optional(),
+  type: z.string().optional(),
+  competitionName: z.string().optional(),
+});
+
+type EditFormData = z.infer<typeof editFormSchema>;
+
 export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: DeleteTrainingModalProps) {
   const [deleteMode, setDeleteMode] = useState<"single" | "future">("single");
+  const [selectedTrainingName, setSelectedTrainingName] = useState("");
   const { toast } = useToast();
+
+  const form = useForm<EditFormData>({
+    resolver: zodResolver(editFormSchema),
+    defaultValues: {
+      title: session?.title || "",
+      type: session?.type || "",
+      competitionName: "",
+    },
+  });
+
+  // セッションが変更されたらフォームをリセット
+  useState(() => {
+    if (session) {
+      form.reset({
+        title: session.title || "",
+        type: session.type || "",
+        competitionName: "",
+      });
+      setSelectedTrainingName(session.title || "");
+    }
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async (data: EditFormData) => {
+      if (!session) return;
+
+      // 大会の場合は2行形式でタイトルを作成
+      const finalTitle = data.title === "大会" && data.competitionName 
+        ? `${data.competitionName}\n※練習は無し`
+        : data.title;
+
+      const updateData: any = {};
+
+      // titleまたはtypeのどちらかのみを含める
+      if (finalTitle !== undefined) {
+        updateData.title = finalTitle;
+        updateData.type = ""; // titleを設定する場合はtypeをクリア
+      }
+      if (data.type && !finalTitle) {
+        updateData.type = data.type;
+        updateData.title = ""; // typeを設定する場合はtitleをクリア
+      }
+
+      const response = await fetch(`/api/training-sessions/${session.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update session");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });
+      
+      toast({
+        title: "更新完了",
+        description: "トレーニングセッションを更新しました",
+      });
+      
+      onSuccess?.();
+      onClose();
+    },
+    onError: (error) => {
+      console.error("更新エラー:", error);
+      toast({
+        title: "更新失敗",
+        description: "トレーニングセッションの更新に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
       if (!session) return;
       
       if (deleteMode === "single") {
-        // 単一のセッションを削除
         const response = await fetch(`/api/training-sessions/${session.id}`, {
           method: "DELETE",
         });
@@ -39,7 +144,6 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
           throw new Error("Failed to delete session");
         }
       } else {
-        // この日以降の繰り返しセッションを削除
         const response = await fetch(`/api/training-sessions/${session.id}/future`, {
           method: "DELETE",
         });
@@ -49,7 +153,6 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
       }
     },
     onSuccess: () => {
-      // キャッシュを無効化
       queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });
       
       toast({
@@ -72,91 +175,232 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
     },
   });
 
+  const handleEdit = (data: EditFormData) => {
+    editMutation.mutate(data);
+  };
+
   const handleDelete = () => {
     deleteMutation.mutate();
   };
 
   if (!session) return null;
 
-  // 繰り返しセッションかどうかを判定
-  // originalSessionIdがある場合は繰り返しから生成されたセッション
   const isRecurringSession = session.isRecurring || Boolean((session as any).originalSessionId);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-red-600">
-            <Trash2 className="h-5 w-5" />
-            トレーニング削除
+          <DialogTitle className="flex items-center gap-2 text-ocean-700">
+            トレーニング管理
           </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-            <p className="text-sm text-red-800">
-              <span className="font-medium">削除対象:</span> {session.title || "トレーニング"}
-            </p>
-            <p className="text-sm text-red-600 mt-1">
-              日付: {session.date}
-            </p>
-          </div>
+        <Tabs defaultValue="edit" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="edit" className="flex items-center gap-2">
+              <Edit className="h-4 w-4" />
+              編集
+            </TabsTrigger>
+            <TabsTrigger value="delete" className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4" />
+              削除
+            </TabsTrigger>
+          </TabsList>
 
-          {isRecurringSession && (
-            <div className="space-y-3">
-              <Label className="text-sm font-medium text-gray-700">
-                削除範囲を選択してください
-              </Label>
-              <RadioGroup value={deleteMode} onValueChange={(value) => setDeleteMode(value as "single" | "future")}>
-                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                  <RadioGroupItem value="single" id="single" />
-                  <Label htmlFor="single" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <Calendar className="h-4 w-4 text-blue-500" />
-                    <div>
-                      <div className="font-medium">この日のみ削除</div>
-                      <div className="text-xs text-gray-500">選択した日のトレーニングのみを削除します</div>
-                    </div>
-                  </Label>
-                </div>
-                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                  <RadioGroupItem value="future" id="future" />
-                  <Label htmlFor="future" className="flex items-center gap-2 cursor-pointer flex-1">
-                    <CalendarDays className="h-4 w-4 text-orange-500" />
-                    <div>
-                      <div className="font-medium">この日以降全て削除</div>
-                      <div className="text-xs text-gray-500">この日から将来の繰り返しトレーニングを全て削除します</div>
-                    </div>
-                  </Label>
-                </div>
-              </RadioGroup>
-            </div>
-          )}
-
-          {!isRecurringSession && (
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                このトレーニングセッションを削除しますか？
+          <TabsContent value="edit" className="space-y-4">
+            <div className="p-4 bg-ocean-50 rounded-lg border border-ocean-200">
+              <p className="text-sm text-ocean-800">
+                <span className="font-medium">編集対象:</span> {session.title || session.type || "トレーニング"}
+              </p>
+              <p className="text-sm text-ocean-600 mt-1">
+                日付: {session.date}
               </p>
             </div>
-          )}
-        </div>
 
-        <DialogFooter className="gap-2">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={deleteMutation.isPending}
-          >
-            キャンセル
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? "削除中..." : "削除"}
-          </Button>
-        </DialogFooter>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleEdit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-ocean-700">
+                        トレーニング名
+                      </FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setSelectedTrainingName(value);
+                          form.setValue("type", "");
+                        }} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="border-ocean-200 focus:ring-ocean-500">
+                            <SelectValue placeholder="選択してください（任意）" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value=" ">(空白)</SelectItem>
+                          <SelectItem value="ミニレク">ミニレク</SelectItem>
+                          <SelectItem value="外">外</SelectItem>
+                          <SelectItem value="ミニ授業">ミニ授業</SelectItem>
+                          <SelectItem value="大会">大会</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {selectedTrainingName === "大会" && (
+                  <FormField
+                    control={form.control}
+                    name="competitionName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium text-ocean-700">
+                          大会名
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="例: 春季水泳大会"
+                            className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <div className="text-center text-sm text-ocean-600">または</div>
+
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-ocean-700">
+                        トレーニング種類
+                      </FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          form.setValue("title", "");
+                          setSelectedTrainingName("");
+                        }} 
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="border-ocean-200 focus:ring-ocean-500">
+                            <SelectValue placeholder="選択してください（任意）" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="sprint">スプリント</SelectItem>
+                          <SelectItem value="form">フォーム</SelectItem>
+                          <SelectItem value="endurance_low">持久力（低）</SelectItem>
+                          <SelectItem value="endurance_medium">持久力（中）</SelectItem>
+                          <SelectItem value="endurance_high">持久力（高）</SelectItem>
+                          <SelectItem value="competition_practice">大会練習</SelectItem>
+                          <SelectItem value="no_practice">※練習は無し</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <DialogFooter className="gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={editMutation.isPending}
+                  >
+                    キャンセル
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={editMutation.isPending}
+                    className="bg-ocean-500 hover:bg-ocean-600"
+                  >
+                    {editMutation.isPending ? "更新中..." : "更新"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </TabsContent>
+
+          <TabsContent value="delete" className="space-y-4">
+            <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+              <p className="text-sm text-red-800">
+                <span className="font-medium">削除対象:</span> {session.title || session.type || "トレーニング"}
+              </p>
+              <p className="text-sm text-red-600 mt-1">
+                日付: {session.date}
+              </p>
+            </div>
+
+            {isRecurringSession && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-gray-700">
+                  削除範囲を選択してください
+                </Label>
+                <RadioGroup value={deleteMode} onValueChange={(value) => setDeleteMode(value as "single" | "future")}>
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                    <RadioGroupItem value="single" id="single" />
+                    <Label htmlFor="single" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <Calendar className="h-4 w-4 text-blue-500" />
+                      <div>
+                        <div className="font-medium">この日のみ削除</div>
+                        <div className="text-xs text-gray-500">選択した日のトレーニングのみを削除します</div>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                    <RadioGroupItem value="future" id="future" />
+                    <Label htmlFor="future" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <CalendarDays className="h-4 w-4 text-orange-500" />
+                      <div>
+                        <div className="font-medium">この日以降全て削除</div>
+                        <div className="text-xs text-gray-500">この日から将来の繰り返しトレーニングを全て削除します</div>
+                      </div>
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
+
+            {!isRecurringSession && (
+              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  このトレーニングセッションを削除しますか？
+                </p>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                disabled={deleteMutation.isPending}
+              >
+                キャンセル
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? "削除中..." : "削除"}
+              </Button>
+            </DialogFooter>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
