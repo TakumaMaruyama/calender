@@ -259,6 +259,7 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
                           <SelectItem value="ミニレク">ミニレク</SelectItem>
                           <SelectItem value="外">外</SelectItem>
                           <SelectItem value="ミニ授業">ミニ授業</SelectItem>
+                          <SelectItem value="IM測定">IM測定</SelectItem>
                           <SelectItem value="大会">大会</SelectItem>
                         </SelectContent>
                       </Select>
