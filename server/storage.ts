@@ -16,7 +16,7 @@ import {
   type InsertNotificationPreferences
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc, gt, isNull } from "drizzle-orm";
+import { eq, and, gte, lte, desc, gt, isNull, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Swimmers
@@ -583,8 +583,12 @@ export class DatabaseStorage implements IStorage {
     const session = await this.getTrainingSession(id);
     if (!session) return false;
 
-    // 同じトレーニング種類のセッションのみを削除
-    // title, type, startTimeがすべて一致するセッションを対象とする
+    // 現在のセッションの曜日を取得
+    const sessionDate = new Date(session.date);
+    const dayOfWeek = sessionDate.getDay();
+
+    // 同じトレーニング種類・かつ同じ曜日のセッションのみを削除
+    // title, type, startTime, 曜日がすべて一致するセッションを対象とする
     const conditions = [
       includeCurrent 
         ? gte(trainingSessions.date, session.date) 
@@ -608,8 +612,25 @@ export class DatabaseStorage implements IStorage {
       conditions.push(isNull(trainingSessions.type));
     }
 
-    const result = await db.delete(trainingSessions)
+    // 曜日のフィルタリングはPostgreSQLのEXTRACT(DOW FROM date)相当をSQLで行う必要があるが、
+    // ここではすべての候補を取得してからアプリケーション側でフィルタリングして削除するか、
+    // またはDrizzleのカスタムSQLを使う
+    
+    // 全候補を取得
+    const candidates = await db.select()
+      .from(trainingSessions)
       .where(and(...conditions));
+
+    // 同じ曜日のものだけIDを抽出
+    const idsToDelete = candidates
+      .filter(s => new Date(s.date).getDay() === dayOfWeek)
+      .map(s => s.id);
+
+    if (idsToDelete.length === 0) return false;
+
+    // まとめて削除
+    const result = await db.delete(trainingSessions)
+      .where(inArray(trainingSessions.id, idsToDelete));
     
     return (result.rowCount ?? 0) > 0;
   }
