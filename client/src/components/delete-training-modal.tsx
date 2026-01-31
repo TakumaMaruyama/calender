@@ -263,7 +263,6 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
                           <SelectItem value="外">外</SelectItem>
                           <SelectItem value="ミニ授業">ミニ授業</SelectItem>
                           <SelectItem value="IM測定">IM測定</SelectItem>
-                          <SelectItem value="蓮先生メニュー">蓮先生メニュー</SelectItem>
                           <SelectItem value="大会">大会</SelectItem>
                         </SelectContent>
                       </Select>
@@ -323,6 +322,7 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
                           <SelectItem value="endurance_low">持久力（低）</SelectItem>
                           <SelectItem value="endurance_medium">持久力（中）</SelectItem>
                           <SelectItem value="endurance_high">持久力（高）</SelectItem>
+                          <SelectItem value="ren_sensei">蓮先生メニュー</SelectItem>
                           <SelectItem value="competition_practice">大会練習</SelectItem>
                           <SelectItem value="no_practice">※練習は無し</SelectItem>
                         </SelectContent>

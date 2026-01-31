@@ -18,6 +18,8 @@ export function getTrainingTypeColor(type: string): string {
       return 'bg-blue-500';
     case 'endurance_high':
       return 'bg-blue-600';
+    case 'ren_sensei':
+      return 'bg-orange-500';
     case 'competition_practice':
       return 'bg-energy';
     case 'no_practice':
@@ -39,6 +41,8 @@ export function getTrainingTypeLabel(type: string): string {
       return '持久力（中）';
     case 'endurance_high':
       return '持久力（高）';
+    case 'ren_sensei':
+      return '蓮先生メニュー';
     case 'competition_practice':
       return '大会練習';
     case 'no_practice':
