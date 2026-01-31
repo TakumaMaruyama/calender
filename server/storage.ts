@@ -16,7 +16,7 @@ import {
   type InsertNotificationPreferences
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc, gt } from "drizzle-orm";
+import { eq, and, gte, lte, desc, gt, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // Swimmers
@@ -583,16 +583,33 @@ export class DatabaseStorage implements IStorage {
     const session = await this.getTrainingSession(id);
     if (!session) return false;
 
-    // includeCurrentがtrueならその日以降(>=)、falseならその日より後(>)を削除
-    const condition = and(
+    // 同じトレーニング種類のセッションのみを削除
+    // title, type, startTimeがすべて一致するセッションを対象とする
+    const conditions = [
       includeCurrent 
         ? gte(trainingSessions.date, session.date) 
         : gt(trainingSessions.date, session.date),
       eq(trainingSessions.startTime, session.startTime)
-    );
+    ];
+
+    // titleが存在する場合はtitleで一致
+    if (session.title) {
+      conditions.push(eq(trainingSessions.title, session.title));
+    } else {
+      // titleがnullの場合はnullであることを確認
+      conditions.push(isNull(trainingSessions.title));
+    }
+
+    // typeが存在する場合はtypeで一致
+    if (session.type) {
+      conditions.push(eq(trainingSessions.type, session.type));
+    } else {
+      // typeがnullの場合はnullであることを確認
+      conditions.push(isNull(trainingSessions.type));
+    }
 
     const result = await db.delete(trainingSessions)
-      .where(condition);
+      .where(and(...conditions));
     
     return (result.rowCount ?? 0) > 0;
   }
