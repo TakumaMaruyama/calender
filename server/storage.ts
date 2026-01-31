@@ -16,7 +16,7 @@ import {
   type InsertNotificationPreferences
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, gt } from "drizzle-orm";
 
 export interface IStorage {
   // Swimmers
@@ -49,7 +49,7 @@ export interface IStorage {
   deleteLeaderSchedule(id: number): Promise<boolean>;
   generateLeaderSchedule(startDate: string, swimmers: Swimmer[]): Promise<void>;
   setLeaderForDate(date: string, leaderId: number, leaders?: { id: number; name: string; order: number; }[]): Promise<void>;
-  deleteFutureTrainingSessions(id: number): Promise<boolean>;
+  deleteFutureTrainingSessions(id: number, includeCurrent?: boolean): Promise<boolean>;
 
   // Notification Preferences
   getNotificationPreferences(swimmerId: number): Promise<NotificationPreferences | null>;
@@ -579,16 +579,20 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  async deleteFutureTrainingSessions(id: number): Promise<boolean> {
+  async deleteFutureTrainingSessions(id: number, includeCurrent: boolean = true): Promise<boolean> {
     const session = await this.getTrainingSession(id);
     if (!session) return false;
 
-    // この日付以降のセッションを削除
+    // includeCurrentがtrueならその日以降(>=)、falseならその日より後(>)を削除
+    const condition = and(
+      includeCurrent 
+        ? gte(trainingSessions.date, session.date) 
+        : gt(trainingSessions.date, session.date),
+      eq(trainingSessions.startTime, session.startTime)
+    );
+
     const result = await db.delete(trainingSessions)
-      .where(and(
-        gte(trainingSessions.date, session.date),
-        eq(trainingSessions.startTime, session.startTime)
-      ));
+      .where(condition);
     
     return (result.rowCount ?? 0) > 0;
   }

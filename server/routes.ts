@@ -136,11 +136,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/training-sessions/:id/future", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      const includeCurrent = req.query.includeCurrent !== "false";
+      
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid session ID" });
       }
 
-      const deleted = await storage.deleteFutureTrainingSessions(id);
+      const deleted = await storage.deleteFutureTrainingSessions(id, includeCurrent);
       if (!deleted) {
         return res.status(404).json({ message: "Training session not found" });
       }

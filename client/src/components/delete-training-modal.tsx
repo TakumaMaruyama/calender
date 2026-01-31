@@ -52,7 +52,7 @@ const editFormSchema = z.object({
 type EditFormData = z.infer<typeof editFormSchema>;
 
 export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: DeleteTrainingModalProps) {
-  const [deleteMode, setDeleteMode] = useState<"single" | "future">("single");
+  const [deleteMode, setDeleteMode] = useState<"single" | "future" | "after">("single");
   const [selectedTrainingName, setSelectedTrainingName] = useState("");
   const { toast } = useToast();
 
@@ -157,7 +157,8 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
           throw new Error("Failed to delete session");
         }
       } else {
-        const response = await fetch(`/api/training-sessions/${session.id}/future`, {
+        const includeCurrent = deleteMode === "future";
+        const response = await fetch(`/api/training-sessions/${session.id}/future?includeCurrent=${includeCurrent}`, {
           method: "DELETE",
         });
         if (!response.ok) {
@@ -172,7 +173,9 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
         title: "削除完了",
         description: deleteMode === "single" 
           ? "トレーニングセッションを削除しました" 
-          : "この日以降のトレーニングセッションを削除しました",
+          : deleteMode === "future"
+            ? "この日以降のトレーニングセッションを削除しました"
+            : "この予定の次から全て削除しました",
       });
       
       onSuccess?.();
@@ -364,7 +367,7 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
                 <Label className="text-sm font-medium text-gray-700">
                   削除範囲を選択してください
                 </Label>
-                <RadioGroup value={deleteMode} onValueChange={(value) => setDeleteMode(value as "single" | "future")}>
+                <RadioGroup value={deleteMode} onValueChange={(value) => setDeleteMode(value as "single" | "future" | "after")}>
                   <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
                     <RadioGroupItem value="single" id="single" />
                     <Label htmlFor="single" className="flex items-center gap-2 cursor-pointer flex-1">
@@ -372,6 +375,16 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
                       <div>
                         <div className="font-medium">この日のみ削除</div>
                         <div className="text-xs text-gray-500">選択した日のトレーニングのみを削除します</div>
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                    <RadioGroupItem value="after" id="after" />
+                    <Label htmlFor="after" className="flex items-center gap-2 cursor-pointer flex-1">
+                      <CalendarDays className="h-4 w-4 text-green-500" />
+                      <div>
+                        <div className="font-medium">この予定の次から全て削除</div>
+                        <div className="text-xs text-gray-500">この予定は残し、次回の繰り返しから全て削除します</div>
                       </div>
                     </Label>
                   </div>
