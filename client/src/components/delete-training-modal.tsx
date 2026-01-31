@@ -362,53 +362,43 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
               </p>
             </div>
 
-            {isRecurringSession && (
-              <div className="space-y-3">
-                <Label className="text-sm font-medium text-gray-700">
-                  削除範囲を選択してください
-                </Label>
-                <RadioGroup value={deleteMode} onValueChange={(value) => setDeleteMode(value as "single" | "future" | "after")}>
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                    <RadioGroupItem value="single" id="single" />
-                    <Label htmlFor="single" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <Calendar className="h-4 w-4 text-blue-500" />
-                      <div>
-                        <div className="font-medium">この日のみ削除</div>
-                        <div className="text-xs text-gray-500">選択した日のトレーニングのみを削除します</div>
-                      </div>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                    <RadioGroupItem value="after" id="after" />
-                    <Label htmlFor="after" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <CalendarDays className="h-4 w-4 text-green-500" />
-                      <div>
-                        <div className="font-medium">この予定の次から全て削除</div>
-                        <div className="text-xs text-gray-500">この予定は残し、次回の繰り返しから全て削除します</div>
-                      </div>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-                    <RadioGroupItem value="future" id="future" />
-                    <Label htmlFor="future" className="flex items-center gap-2 cursor-pointer flex-1">
-                      <CalendarDays className="h-4 w-4 text-orange-500" />
-                      <div>
-                        <div className="font-medium">この日以降全て削除</div>
-                        <div className="text-xs text-gray-500">この日から将来の繰り返しトレーニングを全て削除します</div>
-                      </div>
-                    </Label>
-                  </div>
-                </RadioGroup>
-              </div>
-            )}
-
-            {!isRecurringSession && (
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-800">
-                  このトレーニングセッションを削除しますか？
-                </p>
-              </div>
-            )}
+            <div className="space-y-3">
+              <Label className="text-sm font-medium text-gray-700">
+                削除範囲を選択してください
+              </Label>
+              <RadioGroup value={deleteMode} onValueChange={(value) => setDeleteMode(value as "single" | "future" | "after")}>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                  <RadioGroupItem value="single" id="single" />
+                  <Label htmlFor="single" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <Calendar className="h-4 w-4 text-blue-500" />
+                    <div>
+                      <div className="font-medium">この日のみ削除</div>
+                      <div className="text-xs text-gray-500">選択した日のトレーニングのみを削除します</div>
+                    </div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                  <RadioGroupItem value="after" id="after" />
+                  <Label htmlFor="after" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <CalendarDays className="h-4 w-4 text-green-500" />
+                    <div>
+                      <div className="font-medium">この予定の次から全て削除</div>
+                      <div className="text-xs text-gray-500">この予定は残し、次回以降を全て削除します</div>
+                    </div>
+                  </Label>
+                </div>
+                <div className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
+                  <RadioGroupItem value="future" id="future" />
+                  <Label htmlFor="future" className="flex items-center gap-2 cursor-pointer flex-1">
+                    <CalendarDays className="h-4 w-4 text-orange-500" />
+                    <div>
+                      <div className="font-medium">この日以降全て削除</div>
+                      <div className="text-xs text-gray-500">この日から将来のトレーニングを全て削除します</div>
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
+            </div>
 
             <DialogFooter className="gap-2">
               <Button
