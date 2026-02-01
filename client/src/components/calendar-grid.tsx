@@ -182,7 +182,7 @@ export function CalendarGrid({
                       }
                     }}
                     className={`
-                      relative h-20 lg:h-28 p-1 border-r border-b border-ocean-100 cursor-pointer transition-colors min-w-[100px]
+                      relative h-24 lg:h-28 p-1 border-r border-b border-ocean-100 cursor-pointer transition-colors min-w-[100px]
                       ${!day.isCurrentMonth ? 'bg-gray-50' : 'hover:bg-ocean-50'}
                       ${day.isToday ? 'bg-pool-50 border-l-2 sm:border-l-4 border-l-pool-500' : ''}
                       select-none
@@ -224,7 +224,7 @@ export function CalendarGrid({
                         return (
                           <div
                             key={session.id}
-                            className={`${colorClass} rounded relative w-full ${isTournament ? 'flex items-start h-[40px] pt-1' : 'flex items-center h-[20px]'} cursor-pointer`}
+                            className={`${colorClass} rounded relative w-full ${isTournament ? 'flex items-start h-[40px] pt-1' : 'flex items-center h-[18px]'} cursor-pointer`}
                             title={displayText} // ツールチップで全文表示
                             onClick={(e) => {
                               e.stopPropagation();
