@@ -18,6 +18,15 @@ import {
 import { db } from "./db";
 import { eq, and, gte, lte, desc, gt, isNull, inArray } from "drizzle-orm";
 
+const LEGACY_SWIMMER_NAME_ALIASES: Record<string, string> = {
+  "みお子": "澪心",
+};
+
+function normalizeSwimmerName(name: string): string {
+  const trimmedName = name.trim();
+  return LEGACY_SWIMMER_NAME_ALIASES[trimmedName] ?? trimmedName;
+}
+
 export interface IStorage {
   // Swimmers
   getSwimmer(id: number): Promise<Swimmer | undefined>;
@@ -69,6 +78,7 @@ export class DatabaseStorage implements IStorage {
       // Check if data already exists
       const existingSwimmers = await this.getAllSwimmers();
       if (existingSwimmers.length >= 16) {
+        await this.normalizeLegacySwimmerNames();
         return; // Leaders already initialized, skip initialization
       }
 
@@ -106,10 +116,25 @@ export class DatabaseStorage implements IStorage {
           .onConflictDoNothing(); // 既存データがあれば無視
       }
 
+      await this.normalizeLegacySwimmerNames();
+
       // リーダースケジュールを初期化（6月2日から元翔でスタート）
       await this.initializeLeaderSchedule();
     } catch (error) {
       console.log("Sample data initialization skipped:", error);
+    }
+  }
+
+  private async normalizeLegacySwimmerNames() {
+    for (const [legacyName, canonicalName] of Object.entries(LEGACY_SWIMMER_NAME_ALIASES)) {
+      const updateResult = await db
+        .update(swimmers)
+        .set({ name: canonicalName })
+        .where(eq(swimmers.name, legacyName));
+
+      if ((updateResult.rowCount ?? 0) > 0) {
+        console.log(`Legacy swimmer name normalized: ${legacyName} -> ${canonicalName}`);
+      }
     }
   }
 
@@ -183,10 +208,12 @@ export class DatabaseStorage implements IStorage {
 
   async createSwimmer(insertSwimmer: InsertSwimmer): Promise<Swimmer> {
     try {
+      const normalizedName = normalizeSwimmerName(insertSwimmer.name);
       const [swimmer] = await db
         .insert(swimmers)
         .values({
           ...insertSwimmer,
+          name: normalizedName,
           email: insertSwimmer.email || null,
           lane: insertSwimmer.lane || null
         })
@@ -199,10 +226,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateSwimmer(id: number, updateData: Partial<InsertSwimmer>): Promise<Swimmer | undefined> {
+    const normalizedName = typeof updateData.name === "string"
+      ? normalizeSwimmerName(updateData.name)
+      : undefined;
+
     const [swimmer] = await db
       .update(swimmers)
       .set({
         ...updateData,
+        ...(normalizedName !== undefined ? { name: normalizedName } : {}),
         email: updateData.email || null,
         lane: updateData.lane || null
       })
@@ -895,8 +927,12 @@ export class DatabaseStorage implements IStorage {
     // リーダーリストの各項目を処理
     for (const leader of leaders) {
       try {
+        const normalizedLeaderName = normalizeSwimmerName(leader.name);
+
         // 名前でマッチするスイマーを探す
-        const existingSwimmer = existingSwimmers.find(swimmer => swimmer.name === leader.name);
+        const existingSwimmer = existingSwimmers.find(swimmer =>
+          swimmer.name === normalizedLeaderName || swimmer.name === leader.name
+        );
         
         if (!existingSwimmer) {
           // 新しいスイマーを作成
@@ -904,7 +940,7 @@ export class DatabaseStorage implements IStorage {
             .insert(swimmers)
             .values({
               id: leader.id,
-              name: leader.name,
+              name: normalizedLeaderName,
               level: "intermediate",
               email: null,
               lane: null
@@ -912,7 +948,7 @@ export class DatabaseStorage implements IStorage {
             .onConflictDoUpdate({
               target: swimmers.id,
               set: { 
-                name: leader.name,
+                name: normalizedLeaderName,
                 level: "intermediate"
               }
             });
@@ -924,7 +960,7 @@ export class DatabaseStorage implements IStorage {
             .insert(swimmers)
             .values({
               id: leader.id,
-              name: leader.name,
+              name: normalizedLeaderName,
               level: existingSwimmer.level || "intermediate",
               email: existingSwimmer.email,
               lane: existingSwimmer.lane
@@ -932,7 +968,7 @@ export class DatabaseStorage implements IStorage {
             .onConflictDoUpdate({
               target: swimmers.id,
               set: { 
-                name: leader.name,
+                name: normalizedLeaderName,
                 level: existingSwimmer.level || "intermediate"
               }
             });
