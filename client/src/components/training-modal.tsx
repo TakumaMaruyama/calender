@@ -31,9 +31,14 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 
+const CUSTOM_TITLE_OPTION = "__custom_title__";
+const CUSTOM_TYPE_OPTION = "__custom_type__";
+
 const formSchema = z.object({
   title: z.string().optional(),
   type: z.string().optional(),
+  customTitle: z.string().optional(),
+  customType: z.string().optional(),
   date: z.string().min(1, "日付を選択してください"),
   competitionName: z.string().optional(),
   isRecurring: z.boolean().default(false),
@@ -41,7 +46,16 @@ const formSchema = z.object({
   recurringEndDate: z.string().optional(),
   weekdays: z.array(z.string()).optional(),
   maxOccurrences: z.number().optional(),
-}).refine((data) => data.title || data.type, {
+}).refine((data) => {
+  const resolvedTitle = data.title === CUSTOM_TITLE_OPTION
+    ? data.customTitle?.trim()
+    : data.title;
+  const resolvedType = data.type === CUSTOM_TYPE_OPTION
+    ? data.customType?.trim()
+    : data.type;
+
+  return Boolean(resolvedTitle || resolvedType);
+}, {
   message: "トレーニング名またはトレーニング種類のどちらかを選択してください",
 });
 
@@ -63,6 +77,8 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
     defaultValues: {
       title: "",
       type: "",
+      customTitle: "",
+      customType: "",
       date: selectedDate || "",
       competitionName: "",
       isRecurring: false,
@@ -75,10 +91,17 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
 
   const createSessionMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      // 大会の場合は2行形式でタイトルを作成
-      const finalTitle = data.title === "大会" && data.competitionName 
-        ? `${data.competitionName}\n※練習は無し`
+      const resolvedTitle = data.title === CUSTOM_TITLE_OPTION
+        ? data.customTitle?.trim()
         : data.title;
+      const resolvedType = data.type === CUSTOM_TYPE_OPTION
+        ? data.customType?.trim()
+        : data.type;
+
+      // 大会の場合は2行形式でタイトルを作成
+      const finalTitle = resolvedTitle === "大会" && data.competitionName
+        ? `${data.competitionName.trim()}\n※練習は無し`
+        : resolvedTitle;
 
       const requestData: any = {
         date: data.date,
@@ -90,8 +113,8 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
       if (finalTitle) {
         requestData.title = finalTitle;
       }
-      if (data.type) {
-        requestData.type = data.type;
+      if (resolvedType) {
+        requestData.type = resolvedType;
       }
 
       // 繰り返し設定がある場合のみ追加
@@ -136,6 +159,22 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
   }, [selectedDate, form]);
 
   const onSubmit = (data: FormData) => {
+    if (data.title === CUSTOM_TITLE_OPTION && !data.customTitle?.trim()) {
+      form.setError("customTitle", {
+        type: "manual",
+        message: "自由入力のトレーニング名を入力してください",
+      });
+      return;
+    }
+
+    if (data.type === CUSTOM_TYPE_OPTION && !data.customType?.trim()) {
+      form.setError("customType", {
+        type: "manual",
+        message: "自由入力のトレーニング種類を入力してください",
+      });
+      return;
+    }
+
     createSessionMutation.mutate(data);
   };
 
@@ -161,9 +200,11 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                   <Select 
                     onValueChange={(value) => {
                       field.onChange(value);
-                      setSelectedTrainingName(value);
+                      setSelectedTrainingName(value === CUSTOM_TITLE_OPTION ? "" : value);
+                      form.clearErrors("customTitle");
                       // トレーニング名を選択したらトレーニング種類をクリア
                       form.setValue("type", "");
+                      form.setValue("customType", "");
                     }} 
                     value={field.value}
                   >
@@ -179,12 +220,39 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                       <SelectItem value="ミニ授業">ミニ授業</SelectItem>
                       <SelectItem value="IM測定">IM測定</SelectItem>
                       <SelectItem value="大会">大会</SelectItem>
+                      <SelectItem value={CUSTOM_TITLE_OPTION}>自由入力</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {form.watch("title") === CUSTOM_TITLE_OPTION && (
+              <FormField
+                control={form.control}
+                name="customTitle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-ocean-700">
+                      自由入力（トレーニング名）
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="例: ドルフィン強化"
+                        className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          form.clearErrors("customTitle");
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             {selectedTrainingName === "大会" && (
               <FormField
@@ -221,8 +289,10 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                   <Select 
                     onValueChange={(value) => {
                       field.onChange(value);
+                      form.clearErrors("customType");
                       // トレーニング種類を選択したらトレーニング名をクリア
                       form.setValue("title", "");
+                      form.setValue("customTitle", "");
                       setSelectedTrainingName("");
                     }} 
                     value={field.value}
@@ -241,12 +311,39 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                       <SelectItem value="ren_sensei">蓮先生メニュー</SelectItem>
                       <SelectItem value="competition_practice">大会練習</SelectItem>
                       <SelectItem value="no_practice">※練習は無し</SelectItem>
+                      <SelectItem value={CUSTOM_TYPE_OPTION}>自由入力</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {form.watch("type") === CUSTOM_TYPE_OPTION && (
+              <FormField
+                control={form.control}
+                name="customType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium text-ocean-700">
+                      自由入力（トレーニング種類）
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="例: 個人メドレー"
+                        className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          form.clearErrors("customType");
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}
