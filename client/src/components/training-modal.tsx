@@ -31,14 +31,63 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 
-const CUSTOM_TITLE_OPTION = "__custom_title__";
-const CUSTOM_TYPE_OPTION = "__custom_type__";
+const CUSTOM_TRAINING_OPTION = "__custom_training__";
+const TITLE_OPTION_PREFIX = "title:";
+const TYPE_OPTION_PREFIX = "type:";
+const TOURNAMENT_TITLE = "大会";
+const TOURNAMENT_SUFFIX = "※練習は無し";
+
+const TRAINING_NAME_OPTIONS = [
+  { value: " ", label: "(空白)" },
+  { value: "ミニレク", label: "ミニレク" },
+  { value: "外", label: "外" },
+  { value: "ミニ授業", label: "ミニ授業" },
+  { value: "IM測定", label: "IM測定" },
+  { value: TOURNAMENT_TITLE, label: TOURNAMENT_TITLE },
+] as const;
+
+const TRAINING_TYPE_OPTIONS = [
+  { value: "sprint", label: "スプリント" },
+  { value: "form", label: "フォーム" },
+  { value: "endurance_low", label: "持久力（低）" },
+  { value: "endurance_medium", label: "持久力（中）" },
+  { value: "endurance_high", label: "持久力（高）" },
+  { value: "ren_sensei", label: "蓮先生メニュー" },
+  { value: "competition_practice", label: "大会練習" },
+  { value: "no_practice", label: "※練習は無し" },
+] as const;
+
+const asTitleOption = (value: string) => `${TITLE_OPTION_PREFIX}${value}`;
+const asTypeOption = (value: string) => `${TYPE_OPTION_PREFIX}${value}`;
+const TOURNAMENT_OPTION = asTitleOption(TOURNAMENT_TITLE);
+
+function resolveTrainingOption(trainingOption?: string, customTraining?: string): { title?: string; type?: string } | null {
+  if (!trainingOption) {
+    return null;
+  }
+
+  if (trainingOption === CUSTOM_TRAINING_OPTION) {
+    const customValue = customTraining?.trim();
+    if (!customValue) {
+      return null;
+    }
+    return { title: customValue };
+  }
+
+  if (trainingOption.startsWith(TITLE_OPTION_PREFIX)) {
+    return { title: trainingOption.slice(TITLE_OPTION_PREFIX.length) };
+  }
+
+  if (trainingOption.startsWith(TYPE_OPTION_PREFIX)) {
+    return { type: trainingOption.slice(TYPE_OPTION_PREFIX.length) };
+  }
+
+  return null;
+}
 
 const formSchema = z.object({
-  title: z.string().optional(),
-  type: z.string().optional(),
-  customTitle: z.string().optional(),
-  customType: z.string().optional(),
+  trainingOption: z.string().optional(),
+  customTraining: z.string().optional(),
   date: z.string().min(1, "日付を選択してください"),
   competitionName: z.string().optional(),
   isRecurring: z.boolean().default(false),
@@ -47,16 +96,9 @@ const formSchema = z.object({
   weekdays: z.array(z.string()).optional(),
   maxOccurrences: z.number().optional(),
 }).refine((data) => {
-  const resolvedTitle = data.title === CUSTOM_TITLE_OPTION
-    ? data.customTitle?.trim()
-    : data.title;
-  const resolvedType = data.type === CUSTOM_TYPE_OPTION
-    ? data.customType?.trim()
-    : data.type;
-
-  return Boolean(resolvedTitle || resolvedType);
+  return Boolean(resolveTrainingOption(data.trainingOption, data.customTraining));
 }, {
-  message: "トレーニング名またはトレーニング種類のどちらかを選択してください",
+  message: "トレーニング項目を選択してください",
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -69,16 +111,13 @@ interface TrainingModalProps {
 
 export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalProps) {
   const { toast } = useToast();
-  const [selectedTrainingName, setSelectedTrainingName] = useState("");
   const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-      type: "",
-      customTitle: "",
-      customType: "",
+      trainingOption: "",
+      customTraining: "",
       date: selectedDate || "",
       competitionName: "",
       isRecurring: false,
@@ -91,17 +130,15 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
 
   const createSessionMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const resolvedTitle = data.title === CUSTOM_TITLE_OPTION
-        ? data.customTitle?.trim()
-        : data.title;
-      const resolvedType = data.type === CUSTOM_TYPE_OPTION
-        ? data.customType?.trim()
-        : data.type;
+      const resolvedTraining = resolveTrainingOption(data.trainingOption, data.customTraining);
+      if (!resolvedTraining) {
+        throw new Error("Training option is required");
+      }
 
       // 大会の場合は2行形式でタイトルを作成
-      const finalTitle = resolvedTitle === "大会" && data.competitionName
-        ? `${data.competitionName.trim()}\n※練習は無し`
-        : resolvedTitle;
+      const finalTitle = resolvedTraining.title === TOURNAMENT_TITLE && data.competitionName?.trim()
+        ? `${data.competitionName.trim()}\n${TOURNAMENT_SUFFIX}`
+        : resolvedTraining.title;
 
       const requestData: any = {
         date: data.date,
@@ -109,12 +146,11 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
         isRecurring: data.isRecurring,
       };
 
-      // titleまたはtypeのどちらかのみを含める
-      if (finalTitle) {
+      if (typeof finalTitle === "string") {
         requestData.title = finalTitle;
       }
-      if (resolvedType) {
-        requestData.type = resolvedType;
+      if (resolvedTraining.type) {
+        requestData.type = resolvedTraining.type;
       }
 
       // 繰り返し設定がある場合のみ追加
@@ -139,7 +175,6 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
       
       onClose();
       form.reset();
-      setSelectedTrainingName("");
       setSelectedWeekdays([]);
     },
     onError: (error) => {
@@ -158,19 +193,15 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
     }
   }, [selectedDate, form]);
 
-  const onSubmit = (data: FormData) => {
-    if (data.title === CUSTOM_TITLE_OPTION && !data.customTitle?.trim()) {
-      form.setError("customTitle", {
-        type: "manual",
-        message: "自由入力のトレーニング名を入力してください",
-      });
-      return;
-    }
+  const selectedTrainingOption = form.watch("trainingOption");
+  const isCustomTraining = selectedTrainingOption === CUSTOM_TRAINING_OPTION;
+  const isTournament = selectedTrainingOption === TOURNAMENT_OPTION;
 
-    if (data.type === CUSTOM_TYPE_OPTION && !data.customType?.trim()) {
-      form.setError("customType", {
+  const onSubmit = (data: FormData) => {
+    if (data.trainingOption === CUSTOM_TRAINING_OPTION && !data.customTraining?.trim()) {
+      form.setError("customTraining", {
         type: "manual",
-        message: "自由入力のトレーニング種類を入力してください",
+        message: "自由入力の内容を入力してください",
       });
       return;
     }
@@ -191,20 +222,22 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="title"
+              name="trainingOption"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-ocean-700">
-                    トレーニング名
+                    トレーニング項目
                   </FormLabel>
                   <Select 
                     onValueChange={(value) => {
                       field.onChange(value);
-                      setSelectedTrainingName(value === CUSTOM_TITLE_OPTION ? "" : value);
-                      form.clearErrors("customTitle");
-                      // トレーニング名を選択したらトレーニング種類をクリア
-                      form.setValue("type", "");
-                      form.setValue("customType", "");
+                      form.clearErrors("customTraining");
+                      if (value !== CUSTOM_TRAINING_OPTION) {
+                        form.setValue("customTraining", "");
+                      }
+                      if (value !== TOURNAMENT_OPTION) {
+                        form.setValue("competitionName", "");
+                      }
                     }} 
                     value={field.value}
                   >
@@ -214,13 +247,19 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value=" ">(空白)</SelectItem>
-                      <SelectItem value="ミニレク">ミニレク</SelectItem>
-                      <SelectItem value="外">外</SelectItem>
-                      <SelectItem value="ミニ授業">ミニ授業</SelectItem>
-                      <SelectItem value="IM測定">IM測定</SelectItem>
-                      <SelectItem value="大会">大会</SelectItem>
-                      <SelectItem value={CUSTOM_TITLE_OPTION}>自由入力</SelectItem>
+                      <div className="px-2 py-1 text-xs text-ocean-500">トレーニング名</div>
+                      {TRAINING_NAME_OPTIONS.map((option) => (
+                        <SelectItem key={asTitleOption(option.value)} value={asTitleOption(option.value)}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                      <div className="px-2 py-1 text-xs text-ocean-500">トレーニング種目</div>
+                      {TRAINING_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={asTypeOption(option.value)} value={asTypeOption(option.value)}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value={CUSTOM_TRAINING_OPTION}>自由入力</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -228,14 +267,14 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
               )}
             />
 
-            {form.watch("title") === CUSTOM_TITLE_OPTION && (
+            {isCustomTraining && (
               <FormField
                 control={form.control}
-                name="customTitle"
+                name="customTraining"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-ocean-700">
-                      自由入力（トレーニング名）
+                      自由入力
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -244,7 +283,7 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                         {...field}
                         onChange={(e) => {
                           field.onChange(e);
-                          form.clearErrors("customTitle");
+                          form.clearErrors("customTraining");
                         }}
                       />
                     </FormControl>
@@ -254,7 +293,7 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
               />
             )}
 
-            {selectedTrainingName === "大会" && (
+            {isTournament && (
               <FormField
                 control={form.control}
                 name="competitionName"
@@ -268,75 +307,6 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
                         placeholder="例: 春季水泳大会"
                         className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
                         {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            <div className="text-center text-sm text-ocean-600">または</div>
-
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-sm font-medium text-ocean-700">
-                    トレーニング種類
-                  </FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      form.clearErrors("customType");
-                      // トレーニング種類を選択したらトレーニング名をクリア
-                      form.setValue("title", "");
-                      form.setValue("customTitle", "");
-                      setSelectedTrainingName("");
-                    }} 
-                    value={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="border-ocean-200 focus:ring-ocean-500">
-                        <SelectValue placeholder="選択してください（任意）" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="sprint">スプリント</SelectItem>
-                      <SelectItem value="form">フォーム</SelectItem>
-                      <SelectItem value="endurance_low">持久力（低）</SelectItem>
-                      <SelectItem value="endurance_medium">持久力（中）</SelectItem>
-                      <SelectItem value="endurance_high">持久力（高）</SelectItem>
-                      <SelectItem value="ren_sensei">蓮先生メニュー</SelectItem>
-                      <SelectItem value="competition_practice">大会練習</SelectItem>
-                      <SelectItem value="no_practice">※練習は無し</SelectItem>
-                      <SelectItem value={CUSTOM_TYPE_OPTION}>自由入力</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {form.watch("type") === CUSTOM_TYPE_OPTION && (
-              <FormField
-                control={form.control}
-                name="customType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium text-ocean-700">
-                      自由入力（トレーニング種類）
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="例: 個人メドレー"
-                        className="border-ocean-200 focus:ring-ocean-500 focus:border-ocean-500"
-                        {...field}
-                        onChange={(e) => {
-                          field.onChange(e);
-                          form.clearErrors("customType");
-                        }}
                       />
                     </FormControl>
                     <FormMessage />
