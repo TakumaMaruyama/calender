@@ -149,7 +149,8 @@ export default function Calendar() {
           ctx.fillText(format(calendarDay.date, 'd'), x + 12, y + 30);
 
           // その日のセッションを取得
-          const sessions = trainingSessions?.filter(session => session.date === calendarDay.dateString) || [];
+          const sessions = (trainingSessions?.filter(session => session.date === calendarDay.dateString) || [])
+            .sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
           
           // セッションを描画（最大3つまで）
           sessions.slice(0, 3).forEach((session, sessionIndex) => {
