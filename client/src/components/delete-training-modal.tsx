@@ -68,6 +68,13 @@ const asTitleOption = (value: string) => `${TITLE_OPTION_PREFIX}${value}`;
 const asTypeOption = (value: string) => `${TYPE_OPTION_PREFIX}${value}`;
 const TOURNAMENT_OPTION = asTitleOption(TOURNAMENT_TITLE);
 
+function buildSessionOrderStartTime(index: number): string {
+  const boundedMinutes = Math.max(0, Math.min(index, 23 * 60 + 59));
+  const hours = Math.floor(boundedMinutes / 60).toString().padStart(2, "0");
+  const minutes = (boundedMinutes % 60).toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
 function resolveTrainingOption(trainingOption?: string, customTraining?: string): { title?: string; type?: string } | null {
   if (!trainingOption) {
     return null;
@@ -199,20 +206,55 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
   const reorderMutation = useMutation({
     mutationFn: async (direction: "up" | "down") => {
       if (!session) {
-        return;
+        return null;
       }
 
       const reorderedIds = buildMovedSessionIds(direction);
       if (!reorderedIds) {
-        return;
+        return null;
       }
 
       await apiRequest("POST", "/api/training-sessions/reorder", {
         date: session.date,
         sessionIds: reorderedIds,
       });
+
+      return { date: session.date, sessionIds: reorderedIds };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (result) {
+        const orderMap = new Map<number, number>();
+        result.sessionIds.forEach((id, index) => {
+          orderMap.set(id, index);
+        });
+
+        const applyOrderedStartTimes = (sessions?: TrainingSession[]) => {
+          if (!sessions) {
+            return sessions;
+          }
+          return sessions.map((sessionItem) => {
+            const orderIndex = sessionItem.date === result.date ? orderMap.get(sessionItem.id) : undefined;
+            if (orderIndex === undefined) {
+              return sessionItem;
+            }
+            return {
+              ...sessionItem,
+              startTime: buildSessionOrderStartTime(orderIndex),
+            };
+          });
+        };
+
+        queryClient.setQueriesData<TrainingSession[]>({ queryKey: ['/api/training-sessions/month'] }, applyOrderedStartTimes);
+        queryClient.setQueriesData<TrainingSession[]>({ queryKey: ['/api/training-sessions/date'] }, applyOrderedStartTimes);
+        queryClient.setQueryData<TrainingSession[]>(['/api/training-sessions/date', result.date], (old) => {
+          const updated = applyOrderedStartTimes(old);
+          if (!updated) {
+            return updated;
+          }
+          return [...updated].sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
+        });
+      }
+
       queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/month'] });
       queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/date'] });
