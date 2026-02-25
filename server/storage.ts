@@ -646,17 +646,15 @@ export class DatabaseStorage implements IStorage {
       .from(trainingSessions)
       .where(inArray(trainingSessions.id, uniqueRequestedIds));
 
-    const targetDate = requestedSessions[0]?.date ?? date;
-    const daySessions = await this.getTrainingSessionsByDate(targetDate);
-    if (daySessions.length === 0) {
+    if (requestedSessions.length === 0) {
       return 0;
     }
 
-    const daySessionIdSet = new Set(daySessions.map((session) => session.id));
-    const filteredRequestedIds = uniqueRequestedIds.filter((id) => daySessionIdSet.has(id));
-    const requestedIdSet = new Set(filteredRequestedIds);
-    const remainingIds = daySessions.map((session) => session.id).filter((id) => !requestedIdSet.has(id));
-    const finalOrderIds = [...filteredRequestedIds, ...remainingIds];
+    const existingIdSet = new Set(requestedSessions.map((session) => session.id));
+    const finalOrderIds = uniqueRequestedIds.filter((id) => existingIdSet.has(id));
+    if (finalOrderIds.length === 0) {
+      return 0;
+    }
 
     let updatedCount = 0;
     for (let index = 0; index < finalOrderIds.length; index++) {
@@ -1204,19 +1202,17 @@ class MemoryStorage implements IStorage {
   }
 
   async reorderTrainingSessions(date: string, sessionIds: number[]): Promise<number> {
-    const daySessions = this.trainingSessions
-      .filter(s => s.date === date)
-      .sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
-
-    if (daySessions.length === 0) {
+    const uniqueRequestedIds = Array.from(new Set(sessionIds));
+    if (uniqueRequestedIds.length === 0) {
       return 0;
     }
 
-    const daySessionIdSet = new Set(daySessions.map((session) => session.id));
-    const uniqueRequestedIds = Array.from(new Set(sessionIds)).filter((id) => daySessionIdSet.has(id));
-    const requestedIdSet = new Set(uniqueRequestedIds);
-    const remainingIds = daySessions.map((session) => session.id).filter((id) => !requestedIdSet.has(id));
-    const finalOrderIds = [...uniqueRequestedIds, ...remainingIds];
+    const existingIdSet = new Set(this.trainingSessions.map((session) => session.id));
+    const finalOrderIds = uniqueRequestedIds.filter((id) => existingIdSet.has(id));
+    if (finalOrderIds.length === 0) {
+      return 0;
+    }
+
     const orderById = new Map<number, number>();
 
     finalOrderIds.forEach((sessionId, index) => {
@@ -1225,7 +1221,7 @@ class MemoryStorage implements IStorage {
 
     this.trainingSessions = this.trainingSessions.map((session) => {
       const orderIndex = orderById.get(session.id);
-      if (session.date !== date || orderIndex === undefined) {
+      if (orderIndex === undefined) {
         return session;
       }
       return {
