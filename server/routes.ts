@@ -161,8 +161,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const { date, sessionIds } = reorderSchema.parse(req.body);
 
-      await storage.reorderTrainingSessions(date, sessionIds);
-      res.status(200).json({ message: "Training sessions reordered successfully" });
+      const updatedCount = await storage.reorderTrainingSessions(date, sessionIds);
+      if (updatedCount === 0) {
+        return res.status(409).json({ message: "No sessions were reordered" });
+      }
+      res.status(200).json({ message: "Training sessions reordered successfully", updatedCount });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ message: "Invalid data", errors: error.errors });

@@ -222,38 +222,45 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
       return { date: session.date, sessionIds: reorderedIds };
     },
     onSuccess: (result) => {
-      if (result) {
-        const orderMap = new Map<number, number>();
-        result.sessionIds.forEach((id, index) => {
-          orderMap.set(id, index);
+      if (!result) {
+        toast({
+          title: "更新失敗",
+          description: "並び順を更新できませんでした",
+          variant: "destructive",
         });
-
-        const applyOrderedStartTimes = (sessions?: TrainingSession[]) => {
-          if (!sessions) {
-            return sessions;
-          }
-          return sessions.map((sessionItem) => {
-            const orderIndex = sessionItem.date === result.date ? orderMap.get(sessionItem.id) : undefined;
-            if (orderIndex === undefined) {
-              return sessionItem;
-            }
-            return {
-              ...sessionItem,
-              startTime: buildSessionOrderStartTime(orderIndex),
-            };
-          });
-        };
-
-        queryClient.setQueriesData<TrainingSession[]>({ queryKey: ['/api/training-sessions/month'] }, applyOrderedStartTimes);
-        queryClient.setQueriesData<TrainingSession[]>({ queryKey: ['/api/training-sessions/date'] }, applyOrderedStartTimes);
-        queryClient.setQueryData<TrainingSession[]>(['/api/training-sessions/date', result.date], (old) => {
-          const updated = applyOrderedStartTimes(old);
-          if (!updated) {
-            return updated;
-          }
-          return [...updated].sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
-        });
+        return;
       }
+
+      const orderMap = new Map<number, number>();
+      result.sessionIds.forEach((id, index) => {
+        orderMap.set(id, index);
+      });
+
+      const applyOrderedStartTimes = (sessions?: TrainingSession[]) => {
+        if (!sessions) {
+          return sessions;
+        }
+        return sessions.map((sessionItem) => {
+          const orderIndex = sessionItem.date === result.date ? orderMap.get(sessionItem.id) : undefined;
+          if (orderIndex === undefined) {
+            return sessionItem;
+          }
+          return {
+            ...sessionItem,
+            startTime: buildSessionOrderStartTime(orderIndex),
+          };
+        });
+      };
+
+      queryClient.setQueriesData<TrainingSession[]>({ queryKey: ['/api/training-sessions/month'] }, applyOrderedStartTimes);
+      queryClient.setQueriesData<TrainingSession[]>({ queryKey: ['/api/training-sessions/date'] }, applyOrderedStartTimes);
+      queryClient.setQueryData<TrainingSession[]>(['/api/training-sessions/date', result.date], (old) => {
+        const updated = applyOrderedStartTimes(old);
+        if (!updated) {
+          return updated;
+        }
+        return [...updated].sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
+      });
 
       queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/month'] });

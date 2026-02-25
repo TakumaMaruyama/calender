@@ -51,7 +51,7 @@ export interface IStorage {
   createTrainingSession(session: InsertTrainingSession): Promise<TrainingSession>;
   updateTrainingSession(id: number, session: Partial<InsertTrainingSession>): Promise<TrainingSession | undefined>;
   deleteTrainingSession(id: number): Promise<boolean>;
-  reorderTrainingSessions(date: string, sessionIds: number[]): Promise<void>;
+  reorderTrainingSessions(date: string, sessionIds: number[]): Promise<number>;
 
   // Attendance
   getAttendance(sessionId: number): Promise<Attendance[]>;
@@ -636,25 +636,39 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  async reorderTrainingSessions(date: string, sessionIds: number[]): Promise<void> {
-    const daySessions = await this.getTrainingSessionsByDate(date);
+  async reorderTrainingSessions(date: string, sessionIds: number[]): Promise<number> {
+    const uniqueRequestedIds = Array.from(new Set(sessionIds));
+    if (uniqueRequestedIds.length === 0) {
+      return 0;
+    }
+
+    const requestedSessions = await db.select()
+      .from(trainingSessions)
+      .where(inArray(trainingSessions.id, uniqueRequestedIds));
+
+    const targetDate = requestedSessions[0]?.date ?? date;
+    const daySessions = await this.getTrainingSessionsByDate(targetDate);
     if (daySessions.length === 0) {
-      return;
+      return 0;
     }
 
     const daySessionIdSet = new Set(daySessions.map((session) => session.id));
-    const uniqueRequestedIds = Array.from(new Set(sessionIds)).filter((id) => daySessionIdSet.has(id));
-    const requestedIdSet = new Set(uniqueRequestedIds);
+    const filteredRequestedIds = uniqueRequestedIds.filter((id) => daySessionIdSet.has(id));
+    const requestedIdSet = new Set(filteredRequestedIds);
     const remainingIds = daySessions.map((session) => session.id).filter((id) => !requestedIdSet.has(id));
-    const finalOrderIds = [...uniqueRequestedIds, ...remainingIds];
+    const finalOrderIds = [...filteredRequestedIds, ...remainingIds];
 
+    let updatedCount = 0;
     for (let index = 0; index < finalOrderIds.length; index++) {
       const sessionId = finalOrderIds[index];
-      await db
+      const updateResult = await db
         .update(trainingSessions)
         .set({ startTime: buildSessionOrderStartTime(index) })
         .where(eq(trainingSessions.id, sessionId));
+      updatedCount += updateResult.rowCount ?? 0;
     }
+
+    return updatedCount;
   }
 
   async deleteFutureTrainingSessions(id: number, includeCurrent: boolean = true): Promise<boolean> {
@@ -1189,13 +1203,13 @@ class MemoryStorage implements IStorage {
     return true;
   }
 
-  async reorderTrainingSessions(date: string, sessionIds: number[]): Promise<void> {
+  async reorderTrainingSessions(date: string, sessionIds: number[]): Promise<number> {
     const daySessions = this.trainingSessions
       .filter(s => s.date === date)
       .sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
 
     if (daySessions.length === 0) {
-      return;
+      return 0;
     }
 
     const daySessionIdSet = new Set(daySessions.map((session) => session.id));
@@ -1219,6 +1233,8 @@ class MemoryStorage implements IStorage {
         startTime: buildSessionOrderStartTime(orderIndex),
       };
     });
+
+    return finalOrderIds.length;
   }
 
   async deleteFutureTrainingSessions(id: number): Promise<boolean> {
