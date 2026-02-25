@@ -303,7 +303,6 @@ export class DatabaseStorage implements IStorage {
       .from(trainingSessions)
       .orderBy(
         asc(trainingSessions.date),
-        asc(trainingSessions.startTime),
         desc(trainingSessions.id)
       );
   }
@@ -313,7 +312,6 @@ export class DatabaseStorage implements IStorage {
       .from(trainingSessions)
       .where(eq(trainingSessions.date, date))
       .orderBy(
-        asc(trainingSessions.startTime),
         desc(trainingSessions.id)
       );
   }
@@ -331,7 +329,6 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(
         asc(trainingSessions.date),
-        asc(trainingSessions.startTime),
         desc(trainingSessions.id)
       );
   }
@@ -1099,7 +1096,6 @@ class MemoryStorage implements IStorage {
   async getAllTrainingSessions(): Promise<TrainingSession[]> {
     return [...this.trainingSessions].sort((a, b) =>
       a.date.localeCompare(b.date) ||
-      a.startTime.localeCompare(b.startTime) ||
       b.id - a.id
     );
   }
@@ -1107,7 +1103,7 @@ class MemoryStorage implements IStorage {
   async getTrainingSessionsByDate(date: string): Promise<TrainingSession[]> {
     return this.trainingSessions
       .filter(s => s.date === date)
-      .sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
+      .sort((a, b) => b.id - a.id);
   }
 
   async getTrainingSessionsByMonth(year: number, month: number): Promise<TrainingSession[]> {
@@ -1118,7 +1114,6 @@ class MemoryStorage implements IStorage {
       })
       .sort((a, b) =>
         a.date.localeCompare(b.date) ||
-        a.startTime.localeCompare(b.startTime) ||
         b.id - a.id
       );
   }
