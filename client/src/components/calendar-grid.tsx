@@ -51,7 +51,7 @@ export function CalendarGrid({
   const getSessionsForDate = (dateString: string) => {
     return trainingSessions
       .filter(session => session.date === dateString)
-      .sort((a, b) => b.id - a.id);
+      .sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
   };
 
   const handleTouchStart = (dateString: string, event: React.TouchEvent) => {

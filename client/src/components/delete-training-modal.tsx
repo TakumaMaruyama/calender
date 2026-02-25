@@ -29,10 +29,10 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient } from "@/lib/queryClient";
-import { Trash2, Edit, Calendar, CalendarDays } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Trash2, Edit, Calendar, CalendarDays, ChevronUp, ChevronDown } from "lucide-react";
 import type { TrainingSession } from "@shared/schema";
 
 const CUSTOM_TRAINING_OPTION = "__custom_training__";
@@ -157,6 +157,83 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
     });
   }, [session, form]);
 
+  const { data: daySessions = [] } = useQuery<TrainingSession[]>({
+    queryKey: ['/api/training-sessions/date', session?.date],
+    enabled: isOpen && !!session?.date,
+    queryFn: async () => {
+      if (!session?.date) {
+        return [];
+      }
+      const response = await fetch(`/api/training-sessions/date/${session.date}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch training sessions for date");
+      }
+      return response.json();
+    },
+  });
+
+  const sortedDaySessions = [...daySessions].sort((a, b) =>
+    a.startTime.localeCompare(b.startTime) || b.id - a.id
+  );
+  const currentSessionIndex = session
+    ? sortedDaySessions.findIndex((daySession) => daySession.id === session.id)
+    : -1;
+  const canMoveUp = currentSessionIndex > 0;
+  const canMoveDown = currentSessionIndex >= 0 && currentSessionIndex < sortedDaySessions.length - 1;
+
+  const buildMovedSessionIds = (direction: "up" | "down"): number[] | null => {
+    if (!session || currentSessionIndex < 0) {
+      return null;
+    }
+
+    const targetIndex = direction === "up" ? currentSessionIndex - 1 : currentSessionIndex + 1;
+    if (targetIndex < 0 || targetIndex >= sortedDaySessions.length) {
+      return null;
+    }
+
+    const reordered = [...sortedDaySessions];
+    [reordered[currentSessionIndex], reordered[targetIndex]] = [reordered[targetIndex], reordered[currentSessionIndex]];
+    return reordered.map((daySession) => daySession.id);
+  };
+
+  const reorderMutation = useMutation({
+    mutationFn: async (direction: "up" | "down") => {
+      if (!session) {
+        return;
+      }
+
+      const reorderedIds = buildMovedSessionIds(direction);
+      if (!reorderedIds) {
+        return;
+      }
+
+      await apiRequest("POST", "/api/training-sessions/reorder", {
+        date: session.date,
+        sessionIds: reorderedIds,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/month'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/date'] });
+      if (session?.date) {
+        queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/date', session.date] });
+      }
+      toast({
+        title: "並び順を更新しました",
+        description: "この日のトレーニング表示順を保存しました",
+      });
+    },
+    onError: (error) => {
+      console.error("並び順更新エラー:", error);
+      toast({
+        title: "更新失敗",
+        description: "並び順の更新に失敗しました",
+        variant: "destructive",
+      });
+    },
+  });
+
   const editMutation = useMutation({
     mutationFn: async (data: EditFormData) => {
       if (!session) return;
@@ -194,6 +271,8 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/month'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/date'] });
 
       toast({
         title: "更新完了",
@@ -236,6 +315,8 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/month'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/date'] });
 
       toast({
         title: "削除完了",
@@ -311,6 +392,34 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
                 日付: {session.date}
               </p>
             </div>
+
+            {sortedDaySessions.length > 1 && (
+              <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-sm font-medium text-gray-700 mb-2">この日の表示順</p>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => reorderMutation.mutate("up")}
+                    disabled={!canMoveUp || reorderMutation.isPending}
+                  >
+                    <ChevronUp className="h-4 w-4 mr-1" />
+                    上へ
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => reorderMutation.mutate("down")}
+                    disabled={!canMoveDown || reorderMutation.isPending}
+                  >
+                    <ChevronDown className="h-4 w-4 mr-1" />
+                    下へ
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleEdit)} className="space-y-4">

@@ -153,6 +153,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/training-sessions/reorder", async (req, res) => {
+    try {
+      const reorderSchema = z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
+        sessionIds: z.array(z.number().int()).min(1, "sessionIds is required"),
+      });
+      const { date, sessionIds } = reorderSchema.parse(req.body);
+
+      await storage.reorderTrainingSessions(date, sessionIds);
+      res.status(200).json({ message: "Training sessions reordered successfully" });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Failed to reorder training sessions" });
+    }
+  });
+
   // Swimmers Routes
   app.get("/api/swimmers", async (req, res) => {
     try {

@@ -172,6 +172,8 @@ export function TrainingModal({ isOpen, onClose, selectedDate }: TrainingModalPr
       
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/month'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-sessions/date'] });
       
       onClose();
       form.reset();

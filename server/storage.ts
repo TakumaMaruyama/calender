@@ -27,6 +27,13 @@ function normalizeSwimmerName(name: string): string {
   return LEGACY_SWIMMER_NAME_ALIASES[trimmedName] ?? trimmedName;
 }
 
+function buildSessionOrderStartTime(index: number): string {
+  const boundedMinutes = Math.max(0, Math.min(index, 23 * 60 + 59));
+  const hours = Math.floor(boundedMinutes / 60).toString().padStart(2, "0");
+  const minutes = (boundedMinutes % 60).toString().padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
 export interface IStorage {
   // Swimmers
   getSwimmer(id: number): Promise<Swimmer | undefined>;
@@ -44,6 +51,7 @@ export interface IStorage {
   createTrainingSession(session: InsertTrainingSession): Promise<TrainingSession>;
   updateTrainingSession(id: number, session: Partial<InsertTrainingSession>): Promise<TrainingSession | undefined>;
   deleteTrainingSession(id: number): Promise<boolean>;
+  reorderTrainingSessions(date: string, sessionIds: number[]): Promise<void>;
 
   // Attendance
   getAttendance(sessionId: number): Promise<Attendance[]>;
@@ -303,6 +311,7 @@ export class DatabaseStorage implements IStorage {
       .from(trainingSessions)
       .orderBy(
         asc(trainingSessions.date),
+        asc(trainingSessions.startTime),
         desc(trainingSessions.id)
       );
   }
@@ -312,6 +321,7 @@ export class DatabaseStorage implements IStorage {
       .from(trainingSessions)
       .where(eq(trainingSessions.date, date))
       .orderBy(
+        asc(trainingSessions.startTime),
         desc(trainingSessions.id)
       );
   }
@@ -329,6 +339,7 @@ export class DatabaseStorage implements IStorage {
       ))
       .orderBy(
         asc(trainingSessions.date),
+        asc(trainingSessions.startTime),
         desc(trainingSessions.id)
       );
   }
@@ -623,6 +634,27 @@ export class DatabaseStorage implements IStorage {
   async deleteTrainingSession(id: number): Promise<boolean> {
     const result = await db.delete(trainingSessions).where(eq(trainingSessions.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  async reorderTrainingSessions(date: string, sessionIds: number[]): Promise<void> {
+    const daySessions = await this.getTrainingSessionsByDate(date);
+    if (daySessions.length === 0) {
+      return;
+    }
+
+    const daySessionIdSet = new Set(daySessions.map((session) => session.id));
+    const uniqueRequestedIds = Array.from(new Set(sessionIds)).filter((id) => daySessionIdSet.has(id));
+    const requestedIdSet = new Set(uniqueRequestedIds);
+    const remainingIds = daySessions.map((session) => session.id).filter((id) => !requestedIdSet.has(id));
+    const finalOrderIds = [...uniqueRequestedIds, ...remainingIds];
+
+    for (let index = 0; index < finalOrderIds.length; index++) {
+      const sessionId = finalOrderIds[index];
+      await db
+        .update(trainingSessions)
+        .set({ startTime: buildSessionOrderStartTime(index) })
+        .where(eq(trainingSessions.id, sessionId));
+    }
   }
 
   async deleteFutureTrainingSessions(id: number, includeCurrent: boolean = true): Promise<boolean> {
@@ -1096,6 +1128,7 @@ class MemoryStorage implements IStorage {
   async getAllTrainingSessions(): Promise<TrainingSession[]> {
     return [...this.trainingSessions].sort((a, b) =>
       a.date.localeCompare(b.date) ||
+      a.startTime.localeCompare(b.startTime) ||
       b.id - a.id
     );
   }
@@ -1103,7 +1136,7 @@ class MemoryStorage implements IStorage {
   async getTrainingSessionsByDate(date: string): Promise<TrainingSession[]> {
     return this.trainingSessions
       .filter(s => s.date === date)
-      .sort((a, b) => b.id - a.id);
+      .sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
   }
 
   async getTrainingSessionsByMonth(year: number, month: number): Promise<TrainingSession[]> {
@@ -1114,6 +1147,7 @@ class MemoryStorage implements IStorage {
       })
       .sort((a, b) =>
         a.date.localeCompare(b.date) ||
+        a.startTime.localeCompare(b.startTime) ||
         b.id - a.id
       );
   }
@@ -1153,6 +1187,38 @@ class MemoryStorage implements IStorage {
     if (index === -1) return false;
     this.trainingSessions.splice(index, 1);
     return true;
+  }
+
+  async reorderTrainingSessions(date: string, sessionIds: number[]): Promise<void> {
+    const daySessions = this.trainingSessions
+      .filter(s => s.date === date)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
+
+    if (daySessions.length === 0) {
+      return;
+    }
+
+    const daySessionIdSet = new Set(daySessions.map((session) => session.id));
+    const uniqueRequestedIds = Array.from(new Set(sessionIds)).filter((id) => daySessionIdSet.has(id));
+    const requestedIdSet = new Set(uniqueRequestedIds);
+    const remainingIds = daySessions.map((session) => session.id).filter((id) => !requestedIdSet.has(id));
+    const finalOrderIds = [...uniqueRequestedIds, ...remainingIds];
+    const orderById = new Map<number, number>();
+
+    finalOrderIds.forEach((sessionId, index) => {
+      orderById.set(sessionId, index);
+    });
+
+    this.trainingSessions = this.trainingSessions.map((session) => {
+      const orderIndex = orderById.get(session.id);
+      if (session.date !== date || orderIndex === undefined) {
+        return session;
+      }
+      return {
+        ...session,
+        startTime: buildSessionOrderStartTime(orderIndex),
+      };
+    });
   }
 
   async deleteFutureTrainingSessions(id: number): Promise<boolean> {
