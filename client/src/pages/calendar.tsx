@@ -150,7 +150,7 @@ export default function Calendar() {
 
           // その日のセッションを取得
           const sessions = (trainingSessions?.filter(session => session.date === calendarDay.dateString) || [])
-            .sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
+            .sort((a, b) => a.startTime.localeCompare(b.startTime) || a.id - b.id);
           
           // セッションを描画（最大3つまで）
           sessions.slice(0, 3).forEach((session, sessionIndex) => {

@@ -180,7 +180,7 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
   });
 
   const sortedDaySessions = [...daySessions].sort((a, b) =>
-    a.startTime.localeCompare(b.startTime) || b.id - a.id
+    a.startTime.localeCompare(b.startTime) || a.id - b.id
   );
   const currentSessionIndex = session
     ? sortedDaySessions.findIndex((daySession) => daySession.id === session.id)
@@ -259,7 +259,7 @@ export function DeleteTrainingModal({ isOpen, onClose, session, onSuccess }: Del
         if (!updated) {
           return updated;
         }
-        return [...updated].sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
+        return [...updated].sort((a, b) => a.startTime.localeCompare(b.startTime) || a.id - b.id);
       });
 
       queryClient.invalidateQueries({ queryKey: ['/api/training-sessions'] });

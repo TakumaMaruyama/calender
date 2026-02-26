@@ -16,7 +16,7 @@ import {
   type InsertNotificationPreferences
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc, gt, isNull, inArray, asc } from "drizzle-orm";
+import { eq, and, gte, lte, gt, isNull, inArray, asc } from "drizzle-orm";
 
 const LEGACY_SWIMMER_NAME_ALIASES: Record<string, string> = {
   "みお子": "澪心",
@@ -312,7 +312,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(
         asc(trainingSessions.date),
         asc(trainingSessions.startTime),
-        desc(trainingSessions.id)
+        asc(trainingSessions.id)
       );
   }
 
@@ -322,7 +322,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(trainingSessions.date, date))
       .orderBy(
         asc(trainingSessions.startTime),
-        desc(trainingSessions.id)
+        asc(trainingSessions.id)
       );
   }
 
@@ -340,7 +340,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(
         asc(trainingSessions.date),
         asc(trainingSessions.startTime),
-        desc(trainingSessions.id)
+        asc(trainingSessions.id)
       );
   }
 
@@ -1141,14 +1141,14 @@ class MemoryStorage implements IStorage {
     return [...this.trainingSessions].sort((a, b) =>
       a.date.localeCompare(b.date) ||
       a.startTime.localeCompare(b.startTime) ||
-      b.id - a.id
+      a.id - b.id
     );
   }
 
   async getTrainingSessionsByDate(date: string): Promise<TrainingSession[]> {
     return this.trainingSessions
       .filter(s => s.date === date)
-      .sort((a, b) => a.startTime.localeCompare(b.startTime) || b.id - a.id);
+      .sort((a, b) => a.startTime.localeCompare(b.startTime) || a.id - b.id);
   }
 
   async getTrainingSessionsByMonth(year: number, month: number): Promise<TrainingSession[]> {
@@ -1160,7 +1160,7 @@ class MemoryStorage implements IStorage {
       .sort((a, b) =>
         a.date.localeCompare(b.date) ||
         a.startTime.localeCompare(b.startTime) ||
-        b.id - a.id
+        a.id - b.id
       );
   }
 
